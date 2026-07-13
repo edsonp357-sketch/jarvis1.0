@@ -1,4 +1,4 @@
-#youtube_video.py
+﻿#youtube_video.py
 import json
 import re
 import sys
@@ -71,7 +71,7 @@ def _open_url(url: str) -> None:
         else:
             subprocess.Popen(["cmd", "/c", "start", "", url], shell=False)
     except Exception as e:
-        print(f"[YouTube] ⚠️ open_url failed: {e}")
+        print(f"[YouTube] âš ï¸ open_url failed: {e}")
 
 def _scrape_first_video_url(query: str) -> str | None:
 
@@ -101,7 +101,7 @@ def _scrape_first_video_url(query: str) -> str | None:
             return f"https://www.youtube.com/watch?v={vid}"
 
     except Exception as e:
-        print(f"[YouTube] ⚠️ scrape_first_video_url failed: {e}")
+        print(f"[YouTube] âš ï¸ scrape_first_video_url failed: {e}")
 
     return None
 
@@ -129,7 +129,7 @@ def _ask_for_url(prompt_text: str = "YouTube video URL:") -> str | None:
         url = simpledialog.askstring("J.A.R.V.I.S", prompt_text, parent=root)
         return url.strip() if url else None
     except Exception as e:
-        print(f"[YouTube] ⚠️ URL dialog failed: {e}")
+        print(f"[YouTube] âš ï¸ URL dialog failed: {e}")
         return None
 
 
@@ -162,7 +162,7 @@ def _get_transcript(video_id: str) -> str | None:
         return " ".join(entry["text"] for entry in fetched)
 
     except Exception as e:
-        print(f"[YouTube] ⚠️ Transcript fetch failed: {e}")
+        print(f"[YouTube] âš ï¸ Transcript fetch failed: {e}")
         return None
 
 
@@ -174,7 +174,7 @@ def _summarize_with_gemini(transcript: str, video_url: str) -> str:
     max_chars = 80000
     truncated = transcript[:max_chars] + ("..." if len(transcript) > max_chars else "")
     response  = _client.models.generate_content(
-        model="gemini-2.5-flash",
+        model="gemini-2.0-flash",
         contents=f"Please summarize this YouTube video transcript:\n\n{truncated}",
         config=types.GenerateContentConfig(
             system_instruction=(
@@ -197,11 +197,11 @@ def _save_summary(content: str, video_url: str) -> str:
     filepath = desktop / filename
 
     header = (
-        f"JARVIS — YouTube Summary\n"
-        f"{'─' * 50}\n"
+        f"JARVIS â€” YouTube Summary\n"
+        f"{'â”€' * 50}\n"
         f"URL    : {video_url}\n"
         f"Date   : {datetime.now().strftime('%Y-%m-%d %H:%M')}\n"
-        f"{'─' * 50}\n\n"
+        f"{'â”€' * 50}\n\n"
     )
     filepath.write_text(header + content, encoding="utf-8")
 
@@ -213,7 +213,7 @@ def _save_summary(content: str, video_url: str) -> str:
         else:
             subprocess.Popen(["xdg-open", str(filepath)])
     except Exception as e:
-        print(f"[YouTube] ⚠️ Could not open text editor: {e}")
+        print(f"[YouTube] âš ï¸ Could not open text editor: {e}")
 
     return str(filepath)
 
@@ -247,7 +247,7 @@ def _scrape_video_info(video_id: str) -> dict:
 
         return info
     except Exception as e:
-        print(f"[YouTube] ⚠️ Info scrape failed: {e}")
+        print(f"[YouTube] âš ï¸ Info scrape failed: {e}")
         return {}
 
 
@@ -274,7 +274,7 @@ def _scrape_trending(region: str = "TR", max_results: int = 8) -> list[dict]:
 
         return results
     except Exception as e:
-        print(f"[YouTube] ⚠️ Trending scrape failed: {e}")
+        print(f"[YouTube] âš ï¸ Trending scrape failed: {e}")
         return []
 
 def _handle_play(parameters: dict, player) -> str:
@@ -285,16 +285,16 @@ def _handle_play(parameters: dict, player) -> str:
     if player:
         player.write_log(f"[YouTube] Searching: {query}")
 
-    print(f"[YouTube] 🔍 Scraping first non-Shorts video for: {query}")
+    print(f"[YouTube] ðŸ” Scraping first non-Shorts video for: {query}")
 
     video_url = _scrape_first_video_url(query)
 
     if video_url:
-        print(f"[YouTube] ▶️ Opening: {video_url}")
+        print(f"[YouTube] â–¶ï¸ Opening: {video_url}")
         _open_url(video_url)
         return f"Playing: {query}"
 
-    print(f"[YouTube] ⚠️ Scrape failed, opening filtered search page")
+    print(f"[YouTube] âš ï¸ Scrape failed, opening filtered search page")
     fallback_url = (
         f"https://www.youtube.com/results"
         f"?search_query={quote_plus(query)}"
@@ -387,7 +387,7 @@ def _handle_trending(parameters: dict, player, speak) -> str:
         return f"Could not fetch trending videos for region {region}, sir."
 
     lines  = [f"Top trending videos in {region}:"]
-    lines += [f"{v['rank']}. {v['title']} — {v['channel']}" for v in trending]
+    lines += [f"{v['rank']}. {v['title']} â€” {v['channel']}" for v in trending]
     result = "\n".join(lines)
 
     if speak:
@@ -419,7 +419,7 @@ def youtube_video(
 
     if player:
         player.write_log(f"[YouTube] Action: {action}")
-    print(f"[YouTube] ▶️  Action: {action}  Params: {params}")
+    print(f"[YouTube] â–¶ï¸  Action: {action}  Params: {params}")
 
     handler = _ACTION_MAP.get(action)
     if handler is None:
@@ -433,5 +433,5 @@ def youtube_video(
             return handler(params, player) or "Done."
         return handler(params, player, speak) or "Done."
     except Exception as e:
-        print(f"[YouTube] ❌ Error in {action}: {e}")
+        print(f"[YouTube] âŒ Error in {action}: {e}")
         return f"YouTube {action} failed, sir: {e}"

@@ -1,4 +1,4 @@
-import os
+﻿import os
 import shutil
 import platform
 from pathlib import Path
@@ -17,7 +17,7 @@ _SAFE_ROOTS: list[Path] = [
 ]
 
 def _is_safe_path(target: Path) -> bool:
-    """Verilen path _SAFE_ROOTS içinde mi? Değilse işlemi reddet."""
+    """Verilen path _SAFE_ROOTS iÃ§inde mi? DeÄŸilse iÅŸlemi reddet."""
     try:
         resolved = target.resolve()
         return any(
@@ -97,7 +97,7 @@ def _safe_trash(target: Path) -> str:
     if not _SEND2TRASH:
         return (
             "send2trash is not installed. "
-            "Run: pip install send2trash — "
+            "Run: pip install send2trash â€” "
             "Permanent deletion is disabled for safety."
         )
     send2trash.send2trash(str(target))
@@ -119,10 +119,10 @@ def list_files(path: str = "desktop", show_hidden: bool = False) -> str:
             if not show_hidden and item.name.startswith("."):
                 continue
             if item.is_dir():
-                items.append(f"📁 {item.name}/")
+                items.append(f"ðŸ“ {item.name}/")
             else:
                 size = _format_size(item.stat().st_size)
-                items.append(f"📄 {item.name} ({size})")
+                items.append(f"ðŸ“„ {item.name} ({size})")
 
         if not items:
             return f"Directory is empty: {target.name}/"
@@ -169,7 +169,7 @@ def delete_file(path: str, name: str = "") -> str:
         if not target.exists():
             return f"Not found: {target.name}"
 
-        # Güvenli dizin kontrolü — kritik kullanıcı klasörlerini koru
+        # GÃ¼venli dizin kontrolÃ¼ â€” kritik kullanÄ±cÄ± klasÃ¶rlerini koru
         protected = {
             _get_desktop(), _get_downloads(), _get_documents(),
             _get_pictures(), _get_music(), _get_videos(), Path.home()
@@ -205,7 +205,7 @@ def move_file(path: str, name: str = "", destination: str = "") -> str:
 
         dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.move(str(src), str(dst))
-        return f"Moved: {src.name} → {dst.parent.name}/"
+        return f"Moved: {src.name} â†’ {dst.parent.name}/"
 
     except Exception as e:
         return f"Could not move: {e}"
@@ -236,7 +236,7 @@ def copy_file(path: str, name: str = "", destination: str = "") -> str:
         else:
             shutil.copy2(str(src), str(dst))
 
-        return f"Copied: {src.name} → {dst.parent.name}/"
+        return f"Copied: {src.name} â†’ {dst.parent.name}/"
 
     except Exception as e:
         return f"Could not copy: {e}"
@@ -258,7 +258,7 @@ def rename_file(path: str, name: str = "", new_name: str = "") -> str:
             return f"A file named '{new_name}' already exists here."
 
         target.rename(new_path)
-        return f"Renamed: {target.name} → {new_name}"
+        return f"Renamed: {target.name} â†’ {new_name}"
 
     except Exception as e:
         return f"Could not rename: {e}"
@@ -277,7 +277,7 @@ def read_file(path: str, name: str = "", max_chars: int = 4000) -> str:
 
         content = target.read_text(encoding="utf-8", errors="ignore")
         if len(content) > max_chars:
-            content = content[:max_chars] + f"\n\n[Truncated — {len(content)} total chars]"
+            content = content[:max_chars] + f"\n\n[Truncated â€” {len(content)} total chars]"
         return content
 
     except Exception as e:
@@ -312,7 +312,7 @@ def find_files(name: str = "", extension: str = "",
 
         results    = []
         dir_count  = 0
-        max_dirs   = 500  # performans + güvenlik limiti
+        max_dirs   = 500  # performans + gÃ¼venlik limiti
 
         for item in search_path.rglob("*"):
             if item.is_dir():
@@ -327,7 +327,7 @@ def find_files(name: str = "", extension: str = "",
             if name and name.lower() not in item.name.lower():
                 continue
             size = _format_size(item.stat().st_size)
-            results.append(f"📄 {item.name} ({size}) — {item.parent}")
+            results.append(f"ðŸ“„ {item.name} ({size}) â€” {item.parent}")
             if len(results) >= max_results:
                 break
 
@@ -406,7 +406,7 @@ def organize_desktop() -> str:
 
     try:
         for item in desktop.iterdir():
-            # Klasörlere, gizli dosyalara ve organize klasörlerine dokunma
+            # KlasÃ¶rlere, gizli dosyalara ve organize klasÃ¶rlerine dokunma
             if item.is_dir() or item.name.startswith("."):
                 continue
             if item.name in {k for k in type_map}:
@@ -427,7 +427,7 @@ def organize_desktop() -> str:
                 continue
 
             shutil.move(str(item), str(new_path))
-            moved.append(f"{item.name} → {target_dir.name}/")
+            moved.append(f"{item.name} â†’ {target_dir.name}/")
 
         result = f"Desktop organized: {len(moved)} files moved."
         if moved:
@@ -460,7 +460,7 @@ def get_file_info(path: str, name: str = "") -> str:
             "Location":  str(target.parent),
             "Created":   datetime.fromtimestamp(stat.st_ctime).strftime("%Y-%m-%d %H:%M"),
             "Modified":  datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M"),
-            "Extension": target.suffix or "—",
+            "Extension": target.suffix or "â€”",
         }
         return "\n".join(f"  {k}: {v}" for k, v in info.items())
 

@@ -1,4 +1,4 @@
-#flight_finder.py
+﻿#flight_finder.py
 import json
 import re
 import subprocess
@@ -27,14 +27,14 @@ _MONTH_MAP: dict[str, int] = {
     "january": 1, "february": 2, "march": 3,     "april": 4,
     "may": 5,     "june": 6,     "july": 7,       "august": 8,
     "september": 9, "october": 10, "november": 11, "december": 12,
-    "ocak": 1,  "şubat": 2,  "mart": 3,   "nisan": 4,
-    "mayıs": 5, "haziran": 6, "temmuz": 7, "ağustos": 8,
-    "eylül": 9, "ekim": 10,  "kasım": 11, "aralık": 12,
+    "ocak": 1,  "ÅŸubat": 2,  "mart": 3,   "nisan": 4,
+    "mayÄ±s": 5, "haziran": 6, "temmuz": 7, "aÄŸustos": 8,
+    "eylÃ¼l": 9, "ekim": 10,  "kasÄ±m": 11, "aralÄ±k": 12,
 }
 
 _RELATIVE_MAP_KEYS = {
-    "today", "bugün",
-    "tomorrow", "yarın",
+    "today", "bugÃ¼n",
+    "tomorrow", "yarÄ±n",
 }
 
 
@@ -53,9 +53,9 @@ def _parse_date(raw: str) -> str:
             pass
 
     relative = {
-        "today": today, "bugün": today,
+        "today": today, "bugÃ¼n": today,
         "tomorrow": today + timedelta(days=1),
-        "yarın":    today + timedelta(days=1),
+        "yarÄ±n":    today + timedelta(days=1),
     }
     for key, val in relative.items():
         if key in lower:
@@ -65,7 +65,7 @@ def _parse_date(raw: str) -> str:
         from google import genai as _genai
         _client  = _genai.Client(api_key=_get_api_key())
         response = _client.models.generate_content(
-            model="gemini-2.5-flash-lite",
+            model="gemini-2.0-flash-lite",
             contents=(
                 f"Today is {today.strftime('%Y-%m-%d')}. "
                 f"Convert this date expression to YYYY-MM-DD: '{raw}'. "
@@ -76,7 +76,7 @@ def _parse_date(raw: str) -> str:
         if re.match(r"\d{4}-\d{2}-\d{2}", result):
             return result
     except Exception as e:
-        print(f"[FlightFinder] ⚠️ Gemini date parse failed: {e}")
+        print(f"[FlightFinder] âš ï¸ Gemini date parse failed: {e}")
 
     for month_name, month_num in _MONTH_MAP.items():
         if month_name in lower:
@@ -87,7 +87,7 @@ def _parse_date(raw: str) -> str:
                 return f"{year}-{month_num:02d}-{day:02d}"
 
     # Last resort: today
-    print(f"[FlightFinder] ⚠️ Could not parse date '{raw}' — using today.")
+    print(f"[FlightFinder] âš ï¸ Could not parse date '{raw}' â€” using today.")
     return today.strftime("%Y-%m-%d")
 
 _CABIN_CODE: dict[str, str] = {
@@ -141,7 +141,7 @@ def _search_flights_browser(
         origin, destination, date, return_date, passengers, cabin
     )
 
-    print(f"[FlightFinder] 🌐 Opening: {url}")
+    print(f"[FlightFinder] ðŸŒ Opening: {url}")
     browser_control({"action": "go_to", "url": url})
     time.sleep(5)
 
@@ -169,13 +169,13 @@ def _parse_flights_with_gemini(
 
     try:
         response = _client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-2.0-flash",
             contents=prompt,
             config=types.GenerateContentConfig(
                 system_instruction=(
                     "You are a flight data extraction expert. "
                     "Extract flight information from raw webpage text. "
-                    "Return ONLY valid JSON — no markdown, no explanation."
+                    "Return ONLY valid JSON â€” no markdown, no explanation."
                 )
             ),
         )
@@ -183,7 +183,7 @@ def _parse_flights_with_gemini(
         flights  = json.loads(text)
         return flights if isinstance(flights, list) else []
     except Exception as e:
-        print(f"[FlightFinder] ⚠️ Gemini parse failed: {e}")
+        print(f"[FlightFinder] âš ï¸ Gemini parse failed: {e}")
         return []
 
 def _format_spoken(
@@ -218,7 +218,7 @@ def _format_spoken(
             f"arriving {arrival}{dur_str}, {stop_str}, {price_str}."
         )
 
-    # Cheapest — strip non-digits for comparison
+    # Cheapest â€” strip non-digits for comparison
     priced = [f for f in flights if f.get("price")]
     if priced:
         cheapest = min(
@@ -242,9 +242,9 @@ def _format_text_report(
     page_url:    str,
 ) -> str:
     lines = [
-        "JARVIS — Flight Search Results",
-        "─" * 50,
-        f"Route     : {origin} → {destination}",
+        "JARVIS â€” Flight Search Results",
+        "â”€" * 50,
+        f"Route     : {origin} â†’ {destination}",
         f"Date      : {date}",
     ]
     if return_date:
@@ -252,7 +252,7 @@ def _format_text_report(
     lines += [
         f"Searched  : {datetime.now().strftime('%Y-%m-%d %H:%M')}",
         f"Source    : {page_url}",
-        "─" * 50,
+        "â”€" * 50,
         "",
     ]
 
@@ -283,7 +283,7 @@ def _save_to_desktop(content: str, origin: str, destination: str) -> str:
     filepath = desktop / filename
 
     filepath.write_text(content, encoding="utf-8")
-    print(f"[FlightFinder] 💾 Saved: {filepath}")
+    print(f"[FlightFinder] ðŸ’¾ Saved: {filepath}")
 
     try:
         if is_windows():
@@ -293,7 +293,7 @@ def _save_to_desktop(content: str, origin: str, destination: str) -> str:
         else:
             subprocess.Popen(["xdg-open", str(filepath)])
     except Exception as e:
-        print(f"[FlightFinder] ⚠️ Could not open text editor: {e}")
+        print(f"[FlightFinder] âš ï¸ Could not open text editor: {e}")
 
     return str(filepath)
 
@@ -322,14 +322,14 @@ def flight_finder(parameters: dict, player=None, speak=None) -> str:
     return_date = _parse_date(return_raw) if return_raw else None
 
     if player:
-        player.write_log(f"[FlightFinder] {origin} → {destination} on {date}")
+        player.write_log(f"[FlightFinder] {origin} â†’ {destination} on {date}")
 
     if speak:
         speak(f"Searching flights from {origin} to {destination} on {date}, sir.")
 
     print(
-        f"[FlightFinder] ▶️ {origin} → {destination} | {date}"
-        f"{' → ' + return_date if return_date else ''}"
+        f"[FlightFinder] â–¶ï¸ {origin} â†’ {destination} | {date}"
+        f"{' â†’ ' + return_date if return_date else ''}"
         f" | {cabin} | {passengers} pax"
     )
 
@@ -360,5 +360,5 @@ def flight_finder(parameters: dict, player=None, speak=None) -> str:
         return result
 
     except Exception as e:
-        print(f"[FlightFinder] ❌ {e}")
+        print(f"[FlightFinder] âŒ {e}")
         return f"Flight search failed, sir: {e}"

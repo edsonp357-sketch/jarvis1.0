@@ -1,4 +1,4 @@
-import subprocess
+﻿import subprocess
 import sys
 import json
 import re
@@ -16,8 +16,8 @@ BASE_DIR         = get_base_dir()
 API_CONFIG_PATH  = BASE_DIR / "config" / "api_keys.json"
 PROJECTS_DIR     = Path.home() / "Desktop" / "JarvisProjects"
 MAX_FIX_ATTEMPTS = 5
-MODEL_PLANNER    = "gemini-2.5-flash"
-MODEL_WRITER     = "gemini-2.5-flash"
+MODEL_PLANNER    = "gemini-2.0-flash"
+MODEL_WRITER     = "gemini-2.0-flash"
 
 def _get_api_key() -> str:
     with open(API_CONFIG_PATH, "r", encoding="utf-8") as f:
@@ -109,19 +109,19 @@ def _plan_project(description: str, language: str) -> dict:
 Language: {language}
 Description: {description}
 
-Return ONLY valid JSON — no markdown, no explanation:
+Return ONLY valid JSON â€” no markdown, no explanation:
 {{
   "project_name": "snake_case_name",
   "entry_point": "main.py",
   "files": [
     {{
       "path": "main.py",
-      "description": "Entry point — what it does and which modules it imports",
+      "description": "Entry point â€” what it does and which modules it imports",
       "imports": ["utils.helpers", "core.engine"]
     }},
     {{
       "path": "utils/helpers.py",
-      "description": "Helper utilities — what functions it exposes",
+      "description": "Helper utilities â€” what functions it exposes",
       "imports": []
     }}
   ],
@@ -130,9 +130,9 @@ Return ONLY valid JSON — no markdown, no explanation:
 }}
 
 Critical rules:
-1. List files in DEPENDENCY ORDER — files with no imports come first, entry point comes last.
+1. List files in DEPENDENCY ORDER â€” files with no imports come first, entry point comes last.
 2. The "imports" field must list every other project module this file imports (dot-notation, e.g. "utils.helpers").
-3. Keep it minimal — only files truly needed.
+3. Keep it minimal â€” only files truly needed.
 4. Entry point must be in the files list.
 5. Use relative paths only (e.g. "utils/helpers.py", not absolute paths).
 6. Standard library modules (os, sys, json, etc.) do NOT go in "dependencies".
@@ -210,7 +210,7 @@ Purpose of this file: {file_desc}
 
 General rules:
 - Output ONLY raw code. Absolutely no explanation, no markdown, no triple backticks.
-- Write COMPLETE, RUNNABLE code — no placeholders, no "# TODO", no "pass" stubs.
+- Write COMPLETE, RUNNABLE code â€” no placeholders, no "# TODO", no "pass" stubs.
 - Every import must either be from the standard library, listed dependencies, or the project files shown above.
 - Match import paths EXACTLY to the file paths in the project structure (e.g. if file is "utils/helpers.py", import as "from utils.helpers import ...").
 - Use proper error handling (try/except) where I/O or network calls are made.
@@ -226,7 +226,7 @@ Code for {file_path}:"""
         full_path.parent.mkdir(parents=True, exist_ok=True)
         full_path.write_text(code, encoding="utf-8")
 
-        print(f"[DevAgent] ✅ Written: {file_path} ({len(code)} chars)")
+        print(f"[DevAgent] âœ… Written: {file_path} ({len(code)} chars)")
         return code
 
     except Exception as e:
@@ -248,12 +248,12 @@ def _install_dependencies(dependencies: list[str], project_dir: Path) -> str:
         if result.returncode != 0:
             to_install.append(dep)
         else:
-            print(f"[DevAgent] ✓ Already installed: {pkg_name}")
+            print(f"[DevAgent] âœ“ Already installed: {pkg_name}")
 
     if not to_install:
         return f"All dependencies already installed: {', '.join(dependencies)}"
 
-    print(f"[DevAgent] 📦 Installing: {to_install}")
+    print(f"[DevAgent] ðŸ“¦ Installing: {to_install}")
     try:
         result = subprocess.run(
             [sys.executable, "-m", "pip", "install"] + to_install,
@@ -284,14 +284,14 @@ def _open_vscode(project_dir: Path) -> bool:
                 stderr=subprocess.DEVNULL
             )
             time.sleep(1.5)
-            print(f"[DevAgent] 💻 VSCode opened: {project_dir}")
+            print(f"[DevAgent] ðŸ’» VSCode opened: {project_dir}")
             return True
         except Exception:
             continue
     return False
 
 def _run_project(run_command: str, project_dir: Path, timeout: int = 30) -> str:
-    print(f"[DevAgent] 🚀 Running: {run_command}")
+    print(f"[DevAgent] ðŸš€ Running: {run_command}")
     try:
         parts = run_command.split()
         if parts[0].lower() == "python":
@@ -317,14 +317,14 @@ def _run_project(run_command: str, project_dir: Path, timeout: int = 30) -> str:
         return "\n\n".join(combined_parts) if combined_parts else "Ran with no output."
 
     except subprocess.TimeoutExpired:
-        return f"Timed out after {timeout}s — long-running app (server/GUI) is likely working."
+        return f"Timed out after {timeout}s â€” long-running app (server/GUI) is likely working."
     except FileNotFoundError as e:
         return f"Command not found: {e}"
     except Exception as e:
         return f"Run error: {e}"
 
 def _try_auto_install(error_output: str, project_dir: Path) -> bool:
-    """ModuleNotFoundError varsa eksik paketi otomatik kurmaya çalışır."""
+    """ModuleNotFoundError varsa eksik paketi otomatik kurmaya Ã§alÄ±ÅŸÄ±r."""
     pattern = re.compile(
         r"No module named ['\"]([a-zA-Z0-9_\-\.]+)['\"]", re.IGNORECASE
     )
@@ -333,7 +333,7 @@ def _try_auto_install(error_output: str, project_dir: Path) -> bool:
         return False
 
     pkg = match.group(1).replace("_", "-").split(".")[0]
-    print(f"[DevAgent] 🔧 Auto-installing missing package: {pkg}")
+    print(f"[DevAgent] ðŸ”§ Auto-installing missing package: {pkg}")
     try:
         result = subprocess.run(
             [sys.executable, "-m", "pip", "install", pkg],
@@ -395,7 +395,7 @@ Project goal: {project_description}
 All project files:
 {chr(10).join(f"  - {f['path']}: {f.get('description', '')}" for f in all_files)}
 
-Other files for context (read-only — fix only the target file):
+Other files for context (read-only â€” fix only the target file):
 {other_ctx[:3500]}
 
 File to fix: {fix_path}{line_hint}
@@ -410,7 +410,7 @@ Current (broken) code:
 Rules:
 - Output ONLY the complete fixed code. No explanation, no markdown, no backticks.
 - Fix ALL errors visible in the error output.
-- Keep all existing correct logic — do not remove working features.
+- Keep all existing correct logic â€” do not remove working features.
 - Ensure import paths match the actual project file structure exactly.
 - Do NOT introduce new bugs or remove error handling.
 
@@ -425,12 +425,12 @@ Fixed code for {fix_path}:"""
             full_path.write_text(fixed, encoding="utf-8")
 
             updated_codes[fix_path] = fixed
-            print(f"[DevAgent] 🔧 Fixed: {fix_path}")
+            print(f"[DevAgent] ðŸ”§ Fixed: {fix_path}")
 
         except Exception as e:
             if _is_rate_limit(e):
                 raise RateLimitError(str(e))
-            print(f"[DevAgent] ⚠️ Could not fix {fix_path}: {e}")
+            print(f"[DevAgent] âš ï¸ Could not fix {fix_path}: {e}")
 
     return updated_codes
 
@@ -500,7 +500,7 @@ def _build_project(
                 break
             except RateLimitError:
                 if attempt == 0:
-                    log("Rate limit — waiting 20s...")
+                    log("Rate limit â€” waiting 20s...")
                     time.sleep(20)
                 else:
                     log(f"Rate limit retry failed for {file_path}, skipping.")
@@ -570,7 +570,7 @@ def _build_project(
 
     msg = (
         f"I couldn't fully fix '{proj_name}' after {MAX_FIX_ATTEMPTS} attempts, sir. "
-        f"Project is saved at {project_dir} — open it in VSCode and check manually."
+        f"Project is saved at {project_dir} â€” open it in VSCode and check manually."
     )
     if speak: speak(msg)
     return f"{msg}\n\nLast error:\n{last_output[:600]}"

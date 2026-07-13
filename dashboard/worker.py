@@ -1,5 +1,5 @@
-"""
-dashboard/worker.py — JARVIS PC Worker
+﻿"""
+dashboard/worker.py â€” JARVIS PC Worker
 
 Runs on PC, connects to VPS dashboard via WebSocket.
 Relays commands between VPS (phone/browser) and local JARVIS.
@@ -23,7 +23,7 @@ except ImportError:
     print("[Worker] Instale: pip install websockets")
     exit(1)
 
-# ── Config ──────────────────────────────────────────────────────────────────
+# â”€â”€ Config â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 VPS_URL = "wss://jarvis1-0-j5if.onrender.com/ws/worker"
 RECONNECT_DELAY = 5
 MAX_RECONNECT = 60
@@ -73,7 +73,7 @@ class JARVISWorker:
         msg_type = data.get("type")
 
         if msg_type == "command":
-            # Command from phone/browser → forward to JARVIS
+            # Command from phone/browser â†’ forward to JARVIS
             text = data.get("text", "")
             print(f"[Worker] Comando recebido: {text}")
             await self._send_to_jarvis(text)
@@ -87,14 +87,14 @@ class JARVISWorker:
             print("[Worker] Celular conectado")
 
         elif msg_type == "file_received":
-            # File uploaded from phone → notify JARVIS
+            # File uploaded from phone â†’ notify JARVIS
             name = data.get("name", "")
             print(f"[Worker] Arquivo recebido: {name}")
             await self._send_to_jarvis(f"[FILE_RECEIVED] {name}")
 
         elif msg_type == "get_metrics":
             # VPS requesting system metrics
-            print("[Worker] 📊 Solicitação de métricas recebida")
+            print("[Worker] ðŸ“Š SolicitaÃ§Ã£o de mÃ©tricas recebida")
             await self._send_metrics()
 
         elif msg_type == "control":
@@ -197,7 +197,7 @@ class JARVISWorker:
 
             if self._ws and self._connected:
                 await self._ws.send(json.dumps(metrics))
-                print(f"[Worker] 📊 Métricas enviadas: CPU {metrics['cpu_percent']}% RAM {metrics['ram_percent']}%")
+                print(f"[Worker] ðŸ“Š MÃ©tricas enviadas: CPU {metrics['cpu_percent']}% RAM {metrics['ram_percent']}%")
         except Exception as e:
             print(f"[Worker] Erro ao enviar metricas: {e}")
 
@@ -250,3 +250,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+

@@ -1,4 +1,4 @@
-import json
+﻿import json
 from datetime import datetime
 from threading import Lock
 from pathlib import Path
@@ -41,7 +41,7 @@ def load_memory() -> dict:
                 return data
             return _empty_memory()
         except Exception as e:
-            print(f"[Memory] ⚠️ Load error: {e}")
+            print(f"[Memory] âš ï¸ Load error: {e}")
             return _empty_memory()
 
 def _all_entries(memory: dict) -> list[tuple]:
@@ -64,7 +64,7 @@ def _trim_to_limit(memory: dict) -> dict:
         if len(json.dumps(memory, ensure_ascii=False)) <= MEMORY_MAX_CHARS:
             break
         del memory[cat][key]
-        print(f"[Memory] 🗑️  Trimmed {cat}/{key}")
+        print(f"[Memory] ðŸ—‘ï¸  Trimmed {cat}/{key}")
     return memory
 
 def save_memory(memory: dict) -> None:
@@ -81,7 +81,7 @@ def save_memory(memory: dict) -> None:
 
 def _truncate_value(val: str) -> str:
     if isinstance(val, str) and len(val) > MAX_VALUE_LENGTH:
-        return val[:MAX_VALUE_LENGTH].rstrip() + "…"
+        return val[:MAX_VALUE_LENGTH].rstrip() + "â€¦"
     return val
 
 
@@ -114,7 +114,7 @@ def update_memory(memory_update: dict) -> dict:
     memory = load_memory()
     if _recursive_update(memory, memory_update):
         save_memory(memory)
-        print(f"[Memory] 💾 Saved: {list(memory_update.keys())}")
+        print(f"[Memory] ðŸ’¾ Saved: {list(memory_update.keys())}")
     return memory
 
 def format_memory_for_prompt(memory: dict | None) -> str:
@@ -186,10 +186,10 @@ def format_memory_for_prompt(memory: dict | None) -> str:
     if not lines:
         return ""
 
-    header = "[WHAT YOU KNOW ABOUT THIS PERSON — use naturally, never recite like a list]\n"
+    header = "[WHAT YOU KNOW ABOUT THIS PERSON â€” use naturally, never recite like a list]\n"
     result = header + "\n".join(lines)
     if len(result) > 2000:
-        result = result[:1997] + "…"
+        result = result[:1997] + "â€¦"
 
     return result + "\n"
 

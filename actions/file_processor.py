@@ -1,19 +1,19 @@
-"""
-file_processor.py — JARVIS Universal File Processor
+﻿"""
+file_processor.py â€” JARVIS Universal File Processor
 
 Supported types:
-  image   → describe, ocr, resize, convert, compress, crop
-  pdf     → summarize, extract_text, extract_pages, to_word
-  docx    → summarize, extract_text, reformat, translate_hint
-  txt/md  → summarize, reformat, translate_hint, word_count
-  csv     → analyze, filter, sort, convert, stats
-  xlsx    → analyze, filter, convert, stats
-  json    → validate, format, extract, convert
-  code    → explain, review, fix, run, document
-  audio   → transcribe, trim, convert, info
-  video   → trim, extract_audio, extract_frame, info, compress
-  zip     → list, extract
-  pptx    → summarize, extract_text, to_pdf
+  image   â†’ describe, ocr, resize, convert, compress, crop
+  pdf     â†’ summarize, extract_text, extract_pages, to_word
+  docx    â†’ summarize, extract_text, reformat, translate_hint
+  txt/md  â†’ summarize, reformat, translate_hint, word_count
+  csv     â†’ analyze, filter, sort, convert, stats
+  xlsx    â†’ analyze, filter, convert, stats
+  json    â†’ validate, format, extract, convert
+  code    â†’ explain, review, fix, run, document
+  audio   â†’ transcribe, trim, convert, info
+  video   â†’ trim, extract_audio, extract_frame, info, compress
+  zip     â†’ list, extract
+  pptx    â†’ summarize, extract_text, to_pdf
 """
 
 import os
@@ -37,7 +37,7 @@ def _gemini_client():
 
     class _W:
         def generate_content(self, contents):
-            return _c.models.generate_content(model="gemini-2.5-flash", contents=contents)
+            return _c.models.generate_content(model="gemini-2.0-flash", contents=contents)
 
     return _W()
 
@@ -158,7 +158,7 @@ def _process_image(path: Path, action: str, params: dict, speak=None) -> str:
             img.save(out, "JPEG", quality=quality, optimize=True)
             before = _file_size_str(path)
             after  = _file_size_str(out)
-            return f"Compressed: {before} → {after}. Saved: {out.name}"
+            return f"Compressed: {before} â†’ {after}. Saved: {out.name}"
         except Exception as e:
             return f"Compress failed: {e}"
 
@@ -573,7 +573,7 @@ def _process_audio(path: Path, action: str, params: dict, speak=None) -> str:
             trimmed = audio[int(start * 1000):end_ms]
             out     = _output_path(path, f"trim_{int(start)}s_{int(end)}s")
             trimmed.export(out, format=path.suffix.lstrip("."))
-            return f"Trimmed audio ({int(start)}s–{int(end)}s). Saved: {out.name}"
+            return f"Trimmed audio ({int(start)}sâ€“{int(end)}s). Saved: {out.name}"
         except ImportError:
             return "pydub not installed."
         except Exception as e:
@@ -672,7 +672,7 @@ def _process_video(path: Path, action: str, params: dict, speak=None) -> str:
             )
             before = _file_size_str(path)
             after  = _file_size_str(out)
-            return f"Compressed: {before} → {after}. Saved: {out.name}"
+            return f"Compressed: {before} â†’ {after}. Saved: {out.name}"
         except Exception as e:
             return f"Compress failed: {e}"
 

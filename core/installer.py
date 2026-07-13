@@ -1,5 +1,5 @@
-"""
-MARK XL — Dependency auto-installer.
+﻿"""
+MARK XL â€” Dependency auto-installer.
 
 Called automatically on first launch and after engine reconfiguration.
 Installs only the packages that are actually missing, then exits cleanly.
@@ -12,7 +12,7 @@ import subprocess
 import sys
 from typing import Callable
 
-# ── Package lists ─────────────────────────────────────────────────────────
+# â”€â”€ Package lists â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # Each entry: (import_name, pip_package_name)
 
 _CORE: list[tuple[str, str]] = [
@@ -52,13 +52,13 @@ _STT: dict[str, list[tuple[str, str]]] = {
 # TTS engine packages
 _TTS: dict[str, list[tuple[str, str]]] = {
     "edgetts":    [("edge_tts", "edge-tts")],
-    # kokoro>=0.9 dropped AlbertModel/AutoModel from transformers — version pin is critical
+    # kokoro>=0.9 dropped AlbertModel/AutoModel from transformers â€” version pin is critical
     "kokoro":     [("kokoro",   "kokoro>=0.9"), ("soundfile", "soundfile")],
     "elevenlabs": [],   # uses only requests, already in core
 }
 
 
-# ── Helpers ───────────────────────────────────────────────────────────────
+# â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def _available(module: str) -> bool:
     """Return True if the module can be imported (no actual import)."""
@@ -67,7 +67,7 @@ def _available(module: str) -> bool:
 
 def _pip(package: str, log: Callable | None = None) -> bool:
     if log:
-        log(f"SYS: pip install {package} …")
+        log(f"SYS: pip install {package} â€¦")
     result = subprocess.run(
         [
             sys.executable, "-m", "pip", "install", package,
@@ -78,17 +78,17 @@ def _pip(package: str, log: Callable | None = None) -> bool:
     ok = result.returncode == 0
     if not ok and log:
         stderr = result.stderr.decode(errors="replace").strip()
-        log(f"ERR: {package} install failed — {stderr[:140]}")
+        log(f"ERR: {package} install failed â€” {stderr[:140]}")
     return ok
 
 
-# ── Public API ────────────────────────────────────────────────────────────
+# â”€â”€ Public API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def install_for_config(config: dict, log: Callable | None = None) -> None:
     """
     Install all missing packages required by *config*.
 
-    Blocking — always call from a background thread.
+    Blocking â€” always call from a background thread.
     Progress is reported via the optional *log* callback (receives a str).
     """
     stt = config.get("stt_engine", "whisper").lower()
@@ -112,7 +112,7 @@ def install_for_config(config: dict, log: Callable | None = None) -> None:
 
     if not missing:
         if log:
-            log("SYS: All dependencies already installed ✓")
+            log("SYS: All dependencies already installed âœ“")
         return
 
     pkg_names = ", ".join(p for _, p in missing)
@@ -126,7 +126,7 @@ def install_for_config(config: dict, log: Callable | None = None) -> None:
     if not _available("playwright"):
         _pip("playwright", log)
         if log:
-            log("SYS: Downloading Playwright browser (Chromium, ~150 MB — one-time)…")
+            log("SYS: Downloading Playwright browser (Chromium, ~150 MB â€” one-time)â€¦")
         subprocess.run(
             [sys.executable, "-m", "playwright", "install", "chromium"],
             capture_output=True,
@@ -135,4 +135,5 @@ def install_for_config(config: dict, log: Callable | None = None) -> None:
             log("SYS: Playwright browser ready.")
 
     if log:
-        log("SYS: All dependencies ready ✓")
+        log("SYS: All dependencies ready âœ“")
+

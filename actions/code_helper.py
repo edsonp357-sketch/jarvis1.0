@@ -1,4 +1,4 @@
-import subprocess
+﻿import subprocess
 import sys
 import json
 import re
@@ -15,7 +15,7 @@ BASE_DIR           = get_base_dir()
 API_CONFIG_PATH    = BASE_DIR / "config" / "api_keys.json"
 DESKTOP            = Path.home() / "Desktop"
 MAX_BUILD_ATTEMPTS = 3
-GEMINI_MODEL       = "gemini-2.5-flash"
+GEMINI_MODEL       = "gemini-2.0-flash"
 
 
 def _get_api_key() -> str:
@@ -98,10 +98,10 @@ def _take_screenshot() -> Path | None:
         screenshot_path = Path.home() / "Desktop" / f"jarvis_debug_{int(time.time())}.png"
         screenshot = pyautogui.screenshot()
         screenshot.save(str(screenshot_path))
-        print(f"[Code] 📸 Screenshot: {screenshot_path}")
+        print(f"[Code] ðŸ“¸ Screenshot: {screenshot_path}")
         return screenshot_path
     except Exception as e:
-        print(f"[Code] ⚠️ Screenshot failed: {e}")
+        print(f"[Code] âš ï¸ Screenshot failed: {e}")
         return None
 
 
@@ -113,21 +113,21 @@ def _image_to_base64(path: Path) -> str:
 def _detect_intent(description: str, file_path: str, code: str) -> str:
     desc = (description or "").lower()
 
-    screen_kw = ["ekrandaki", "screen", "ekranda", "bu hatayı", "why am i getting",
-                 "neden hata", "what's wrong", "ne yanlış", "screenshot", "görüntü"]
+    screen_kw = ["ekrandaki", "screen", "ekranda", "bu hatayÄ±", "why am i getting",
+                 "neden hata", "what's wrong", "ne yanlÄ±ÅŸ", "screenshot", "gÃ¶rÃ¼ntÃ¼"]
     if any(k in desc for k in screen_kw):
         return "screen_debug"
 
     optimize_kw = ["optimize", "refactor", "clean up", "improve", "temizle",
-                   "iyileştir", "daha iyi", "make it better", "hızlandır"]
+                   "iyileÅŸtir", "daha iyi", "make it better", "hÄ±zlandÄ±r"]
     if any(k in desc for k in optimize_kw) and (code or file_path):
         return "optimize"
 
     if file_path:
         p = Path(file_path)
         edit_kw  = ["edit", "update", "modify", "change", "add", "remove",
-                    "refactor", "fix", "rename", "replace", "düzenle", "değiştir"]
-        run_kw   = ["run", "execute", "launch", "start", "çalıştır"]
+                    "refactor", "fix", "rename", "replace", "dÃ¼zenle", "deÄŸiÅŸtir"]
+        run_kw   = ["run", "execute", "launch", "start", "Ã§alÄ±ÅŸtÄ±r"]
         build_kw = ["build", "make it work", "try", "attempt"]
 
         if p.exists() and any(k in desc for k in edit_kw):
@@ -139,7 +139,7 @@ def _detect_intent(description: str, file_path: str, code: str) -> str:
         if p.exists():
             return "explain"
 
-    explain_kw = ["explain", "what does", "describe", "analyze", "açıkla", "ne yapıyor"]
+    explain_kw = ["explain", "what does", "describe", "analyze", "aÃ§Ä±kla", "ne yapÄ±yor"]
     if any(k in desc for k in explain_kw) and (code or file_path):
         return "explain"
 
@@ -177,7 +177,7 @@ def _fix_code(code: str, error_output: str, description: str) -> str:
     model  = _get_gemini()
     prompt = f"""You are an expert debugger.
 The code below failed with the following error. Fix it.
-Return ONLY the corrected code — no explanation, no markdown, no backticks.
+Return ONLY the corrected code â€” no explanation, no markdown, no backticks.
 
 Original goal: {description}
 
@@ -240,7 +240,7 @@ def _build(description, language, output_path, args, timeout, speak=None, player
 
     try:
         code, path = _write(description, lang, output_path, player)
-        print(f"[Code] ✅ Written: {path}")
+        print(f"[Code] âœ… Written: {path}")
     except Exception as e:
         msg = f"Could not write initial code: {e}"
         if speak: speak(msg)
@@ -248,7 +248,7 @@ def _build(description, language, output_path, args, timeout, speak=None, player
 
     last_output = ""
     for attempt in range(1, MAX_BUILD_ATTEMPTS + 1):
-        print(f"[Code] 🔄 Attempt {attempt}/{MAX_BUILD_ATTEMPTS}")
+        print(f"[Code] ðŸ”„ Attempt {attempt}/{MAX_BUILD_ATTEMPTS}")
         if player:
             player.write_log(f"[Code] Attempt {attempt}...")
 
@@ -263,7 +263,7 @@ def _build(description, language, output_path, args, timeout, speak=None, player
             if speak: speak(msg)
             return f"{msg}\n\nOutput:\n{last_output}"
 
-        print(f"[Code] ⚠️ Error on attempt {attempt}, fixing...")
+        print(f"[Code] âš ï¸ Error on attempt {attempt}, fixing...")
         if player:
             player.write_log(f"[Code] Fixing (attempt {attempt})...")
 
@@ -289,7 +289,7 @@ def _write_action(description, language, output_path, player) -> str:
         player.write_log("[Code] Writing code...")
     try:
         code, path = _write(description, language, output_path, player)
-        print(f"[Code] ✅ Written: {path}")
+        print(f"[Code] âœ… Written: {path}")
         return f"Code written. Saved to: {path}\n\nPreview:\n{_preview(code)}"
     except Exception as e:
         return f"Could not generate code: {e}"
@@ -311,7 +311,7 @@ def _edit_action(file_path, instruction, player) -> str:
     model  = _get_gemini()
     prompt = f"""You are an expert code editor.
 Apply the following change to the code below.
-Return ONLY the complete updated code — no explanation, no markdown, no backticks.
+Return ONLY the complete updated code â€” no explanation, no markdown, no backticks.
 
 Change: {instruction}
 
@@ -327,7 +327,7 @@ Updated code:"""
         return f"Could not edit code: {e}"
 
     status = _save_file(Path(file_path), edited)
-    print(f"[Code] ✅ Edited: {file_path}")
+    print(f"[Code] âœ… Edited: {file_path}")
     return f"File edited. {status}\n\nPreview:\n{_preview(edited)}"
 
 
@@ -345,7 +345,7 @@ def _explain_action(file_path, code, player) -> str:
     model  = _get_gemini()
     prompt = f"""Explain what this code does in simple, clear language.
 Focus on: what it does, how it works, and any important details.
-Be concise — 3 to 6 sentences maximum.
+Be concise â€” 3 to 6 sentences maximum.
 
 Code:
 {code[:4000]}
@@ -387,12 +387,12 @@ def _optimize_action(file_path, code, language, output_path, player) -> str:
 
     prompt = f"""You are an expert {lang} developer and code reviewer.
 Optimize the following code for:
-1. Performance — eliminate unnecessary operations, use efficient data structures
-2. Readability — clear variable names, proper formatting, logical structure
-3. Best practices — modern {lang} patterns, error handling, type hints if applicable
+1. Performance â€” eliminate unnecessary operations, use efficient data structures
+2. Readability â€” clear variable names, proper formatting, logical structure
+3. Best practices â€” modern {lang} patterns, error handling, type hints if applicable
 4. Remove dead code, redundant comments, and unnecessary complexity
 
-Return ONLY the optimized code — no explanation, no markdown, no backticks.
+Return ONLY the optimized code â€” no explanation, no markdown, no backticks.
 
 Original code:
 {code[:6000]}
@@ -412,7 +412,7 @@ Optimized code:"""
         save_path = _resolve_save_path(output_path, lang)
 
     status = _save_file(save_path, optimized)
-    print(f"[Code] ✅ Optimized: {save_path}")
+    print(f"[Code] âœ… Optimized: {save_path}")
 
     original_lines  = len(code.splitlines())
     optimized_lines = len(optimized.splitlines())
@@ -420,8 +420,8 @@ Optimized code:"""
 
     return (
         f"Code optimized. {status}\n"
-        f"Lines: {original_lines} → {optimized_lines} "
-        f"({'−' if diff > 0 else '+'}{abs(diff)} lines)\n\n"
+        f"Lines: {original_lines} â†’ {optimized_lines} "
+        f"({'âˆ’' if diff > 0 else '+'}{abs(diff)} lines)\n\n"
         f"Preview:\n{_preview(optimized)}"
     )
 
@@ -431,7 +431,7 @@ def _screen_debug_action(description, file_path, player, speak=None) -> str:
     if player:
         player.write_log("[Code] Taking screenshot for analysis...")
 
-    print("[Code] 📸 Capturing screen for debug...")
+    print("[Code] ðŸ“¸ Capturing screen for debug...")
 
 
     screenshot_path = _take_screenshot()
@@ -443,7 +443,7 @@ def _screen_debug_action(description, file_path, player, speak=None) -> str:
     if file_path:
         file_content, err = _read_file(file_path)
         if err:
-            print(f"[Code] ⚠️ Could not read file: {err}")
+            print(f"[Code] âš ï¸ Could not read file: {err}")
 
     try:
         from google import genai
@@ -478,12 +478,12 @@ Be specific and actionable. If you see an error message, quote it exactly."""
         ]
 
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-2.0-flash",
             contents=contents,
         )
 
         analysis = response.text.strip()
-        print(f"[Code] ✅ Screen analysis complete")
+        print(f"[Code] âœ… Screen analysis complete")
 
         try:
             screenshot_path.unlink()
@@ -497,8 +497,8 @@ Be specific and actionable. If you see an error message, quote it exactly."""
                 fixed_code = code_match.group(1).strip()
                 save_path  = Path(file_path)
                 _save_file(save_path, fixed_code)
-                analysis += f"\n\n✅ Fixed code has been saved to: {file_path}"
-                print(f"[Code] ✅ Fixed code saved: {file_path}")
+                analysis += f"\n\nâœ… Fixed code has been saved to: {file_path}"
+                print(f"[Code] âœ… Fixed code saved: {file_path}")
 
         return analysis
 
@@ -525,7 +525,7 @@ def code_helper(
         action      : write | edit | explain | run | build | screen_debug | optimize | auto
         description : What the code should do / what change to make / what problem to analyze
         language    : Programming language (default: python)
-        output_path : Where to save — user specifies full path or filename
+        output_path : Where to save â€” user specifies full path or filename
         file_path   : Path to existing file (edit / explain / run / build / optimize)
         code        : Raw code string (explain/optimize without a file)
         args        : CLI argument list for run/build
@@ -543,7 +543,7 @@ def code_helper(
 
     if action == "auto":
         action = _detect_intent(description, file_path, code)
-        print(f"[Code] 🤖 Auto-detected: {action}")
+        print(f"[Code] ðŸ¤– Auto-detected: {action}")
 
     if action == "write":
         return _write_action(description, language, output_path, player)

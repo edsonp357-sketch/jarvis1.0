@@ -1,8 +1,8 @@
-"""
+﻿"""
 Speech-to-Text engines for MARK XL.
 
-Whisper  – offline transcription via faster-whisper (VAD-buffered)
-Vosk     – offline streaming transcription (lighter)
+Whisper  â€“ offline transcription via faster-whisper (VAD-buffered)
+Vosk     â€“ offline streaming transcription (lighter)
 """
 import json
 import numpy as np
@@ -14,7 +14,7 @@ class WhisperSTT:
     def __init__(self, model_name: str = "base", language: str | None = None):
         import os
         from faster_whisper import WhisperModel
-        print(f"[STT] Loading Whisper '{model_name}'…")
+        print(f"[STT] Loading Whisper '{model_name}'â€¦")
         try:
             import torch
             device  = "cuda" if torch.cuda.is_available() else "cpu"
@@ -25,7 +25,7 @@ class WhisperSTT:
         try:
             self._model = WhisperModel(model_name, device=device, compute_type=compute)
         except Exception as _first_err:
-            # Offline flag set but model not cached yet → clear flags and download once.
+            # Offline flag set but model not cached yet â†’ clear flags and download once.
             # Keywords cover multiple huggingface_hub error message variants across versions.
             _e = str(_first_err).lower()
             _offline_keywords = (
@@ -33,7 +33,7 @@ class WhisperSTT:
                 "does not exist", "outgoing", "local_files_only",
             )
             if any(k in _e for k in _offline_keywords):
-                print(f"[STT] Whisper '{model_name}' not in local cache — downloading (one-time, internet required)…")
+                print(f"[STT] Whisper '{model_name}' not in local cache â€” downloading (one-time, internet required)â€¦")
                 os.environ.pop("HF_HUB_OFFLINE",      None)
                 os.environ.pop("TRANSFORMERS_OFFLINE", None)
                 os.environ.pop("HF_DATASETS_OFFLINE",  None)
@@ -42,7 +42,7 @@ class WhisperSTT:
                 except Exception as _dl_err:
                     raise RuntimeError(
                         f"Whisper '{model_name}' model download failed.\n"
-                        f"Internet access is required the first time to download the speech model (~75–290 MB).\n"
+                        f"Internet access is required the first time to download the speech model (~75â€“290 MB).\n"
                         f"After the first download it runs fully offline.\n"
                         f"Details: {_dl_err}"
                     ) from _dl_err
@@ -58,7 +58,7 @@ class WhisperSTT:
             segments, _ = self._model.transcribe(
                 audio,
                 language=self._language,
-                beam_size=1,                       # greedy — 2-3x faster
+                beam_size=1,                       # greedy â€” 2-3x faster
                 best_of=1,
                 condition_on_previous_text=False,  # no hallucinations, faster
                 vad_filter=True,
@@ -75,7 +75,7 @@ class VoskSTT:
 
     def __init__(self, model_path: str | None = None, language: str = "en-us"):
         from vosk import Model, KaldiRecognizer
-        print("[STT] Loading Vosk model…")
+        print("[STT] Loading Vosk modelâ€¦")
         if model_path:
             model = Model(model_path)
         else:
@@ -91,3 +91,4 @@ class VoskSTT:
             return result.get("text", ""), True
         partial = json.loads(self._rec.PartialResult())
         return partial.get("partial", ""), False
+

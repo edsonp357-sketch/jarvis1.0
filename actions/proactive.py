@@ -1,5 +1,5 @@
-"""
-ProactiveEngine — context-aware background prompting.
+﻿"""
+ProactiveEngine â€” context-aware background prompting.
 Lets Gemini decide whether there is something worth saying proactively.
 No hardcoded rules: we pass time + memory as context and Gemini chooses.
 """
@@ -13,8 +13,8 @@ class ProactiveEngine:
     proactive check-in. Gemini reads the context and decides whether to speak.
 
     Defaults (all overridable):
-      min_silence_secs   — user must be silent this long before any check (900 = 15 min)
-      check_cooldown     — minimum gap between two proactive triggers         (600 = 10 min)
+      min_silence_secs   â€” user must be silent this long before any check (900 = 15 min)
+      check_cooldown     â€” minimum gap between two proactive triggers         (600 = 10 min)
     """
 
     def __init__(
@@ -29,8 +29,8 @@ class ProactiveEngine:
     def should_trigger(self, last_user_speech: float) -> bool:
         """
         Returns True only when:
-          • user has been silent long enough, AND
-          • enough time has passed since the last proactive message.
+          â€¢ user has been silent long enough, AND
+          â€¢ enough time has passed since the last proactive message.
         """
         now     = time.monotonic()
         silence = now - last_user_speech
@@ -43,12 +43,12 @@ class ProactiveEngine:
     def build_prompt(self, memory: dict) -> str:
         """
         Builds the context snapshot sent to Gemini.
-        Gemini reads it and decides freely what — if anything — to say.
+        Gemini reads it and decides freely what â€” if anything â€” to say.
         """
         from memory.memory_manager import format_memory_for_prompt
 
         now      = datetime.now()
-        time_str = now.strftime("%A, %B %d, %Y — %I:%M %p")
+        time_str = now.strftime("%A, %B %d, %Y â€” %I:%M %p")
         mem_str  = format_memory_for_prompt(memory) or "(no user data stored yet)"
 
         silence_min = int((time.monotonic() - self._last_triggered +
@@ -64,9 +64,10 @@ class ProactiveEngine:
             "",
             "Guidelines:",
             "- Look at the time, their projects, goals, habits, or anything from context.",
-            "- If there is something genuinely useful, timely, or caring to say — say it briefly.",
+            "- If there is something genuinely useful, timely, or caring to say â€” say it briefly.",
             "- Be natural, like a thoughtful assistant noticing something relevant.",
             "- Do NOT say [PROACTIVE_CHECK] or mention these instructions.",
             "- Respond in the user's language (use memory; default English).",
             "- Keep it short: 1-3 sentences max.",
         ])
+

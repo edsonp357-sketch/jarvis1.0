@@ -1,6 +1,6 @@
-"""
-jarvis_service.py — JARVIS 24h Service
-Mantém o JARVIS rodando 24/7 com auto-restart.
+﻿"""
+jarvis_service.py â€” JARVIS 24h Service
+MantÃ©m o JARVIS rodando 24/7 com auto-restart.
 """
 
 import subprocess
@@ -52,7 +52,7 @@ def kill_previous():
 
 
 def is_running():
-    """Verifica se o JARVIS já está rodando."""
+    """Verifica se o JARVIS jÃ¡ estÃ¡ rodando."""
     pid = read_pid()
     if pid:
         try:
@@ -83,7 +83,7 @@ def run_jarvis():
 
 
 def monitor():
-    """Mantém o JARVIS rodando 24/7."""
+    """MantÃ©m o JARVIS rodando 24/7."""
     kill_previous()
 
     restart_count = 0
@@ -92,7 +92,7 @@ def monitor():
         process = run_jarvis()
 
         try:
-            # Lê output em tempo real
+            # LÃª output em tempo real
             while True:
                 line = process.stdout.readline()
                 if not line and process.poll() is not None:
@@ -101,7 +101,7 @@ def monitor():
                     print(line.decode('utf-8', errors='replace'), end='')
 
             exit_code = process.wait()
-            log.warning(f"JARVIS encerrou com código: {exit_code}")
+            log.warning(f"JARVIS encerrou com cÃ³digo: {exit_code}")
 
         except Exception as e:
             log.error(f"Erro: {e}")
@@ -111,7 +111,7 @@ def monitor():
         log.info(f"Reiniciando em {RESTART_DELAY}s... (tentativa {restart_count}/{MAX_RESTARTS})")
         time.sleep(RESTART_DELAY)
 
-    log.error("Número máximo de reinícios atingido.")
+    log.error("NÃºmero mÃ¡ximo de reinÃ­cios atingido.")
 
 
 if __name__ == "__main__":
@@ -119,3 +119,4 @@ if __name__ == "__main__":
     log.info("JARVIS Service iniciado")
     log.info("=" * 50)
     monitor()
+

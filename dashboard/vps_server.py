@@ -1,12 +1,12 @@
-"""
-dashboard/vps_server.py — JARVIS VPS Relay Server + Cloud Core
+﻿"""
+dashboard/vps_server.py â€” JARVIS VPS Relay Server + Cloud Core
 
 Runs on VPS (24/7). Serves dashboard, relays commands to PC worker.
 When PC worker is NOT connected, uses JarvisCloud for text-based responses.
 
 Modes:
-  - PC Mode (🖥️): Worker connected → commands forwarded to PC
-  - Cloud Mode (⛅): No worker → commands processed by JarvisCloud locally
+  - PC Mode (ðŸ–¥ï¸): Worker connected â†’ commands forwarded to PC
+  - Cloud Mode (â›…): No worker â†’ commands processed by JarvisCloud locally
 
 Usage on VPS:
   pip install fastapi "uvicorn[standard]" cryptography google-genai duckduckgo-search
@@ -28,7 +28,7 @@ try:
     from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
     import uvicorn
 except ImportError:
-    print("[VPS] Instale as dependências: pip install fastapi 'uvicorn[standard]' cryptography")
+    print("[VPS] Instale as dependÃªncias: pip install fastapi 'uvicorn[standard]' cryptography")
     exit(1)
 
 try:
@@ -49,7 +49,7 @@ except ImportError as e:
     print(f"[VPS] JarvisCloud not available: {e}")
     print("[VPS]     Install: pip install google-genai duckduckgo-search")
 
-# ── Config ──────────────────────────────────────────────────────────────────
+# â”€â”€ Config â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 PORT = int(os.environ.get("PORT", 8888))
 WORKER_PORT = int(os.environ.get("WORKER_PORT", 8889))
 IS_CLOUD_DEPLOY = bool(os.environ.get("RAILWAY_ENVIRONMENT") or os.environ.get("RENDER") or os.environ.get("CLOUD_DEPLOY"))
@@ -79,7 +79,7 @@ def _read(name: str) -> str:
     return (STATIC_DIR / name).read_text(encoding="utf-8")
 
 
-# ── VPS Dashboard Server ───────────────────────────────────────────────────
+# â”€â”€ VPS Dashboard Server â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class VPSDashboard:
 
@@ -99,7 +99,7 @@ class VPSDashboard:
         self.app = self._build_app()
         self.worker_app = self._build_worker_app()
 
-        # ── Cloud Core ──────────────────────────────────────────────────
+        # â”€â”€ Cloud Core â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         self._cloud: JarvisCloud | None = None
         self._cloud_task: asyncio.Task | None = None
         if _CLOUD_OK:
@@ -116,7 +116,7 @@ class VPSDashboard:
 
     @property
     def mode_label(self) -> str:
-        return "🖥️ PC Mode" if self._worker else "⛅ Cloud Mode"
+        return "ðŸ–¥ï¸ PC Mode" if self._worker else "â›… Cloud Mode"
 
     async def _on_cloud_proactive(self, text: str):
         """Called when cloud core generates a proactive message."""
@@ -138,7 +138,7 @@ class VPSDashboard:
             await self.broadcast_to_browsers({
                 "type": "log",
                 "speaker": "jarvis",
-                "text": "⚠️ Cloud mode is not available. Connect your PC with: python main.py --remote",
+                "text": "âš ï¸ Cloud mode is not available. Connect your PC with: python main.py --remote",
                 "ts": "",
             })
             return
@@ -225,7 +225,7 @@ class VPSDashboard:
             except Exception:
                 self._worker = None
 
-    # ── Browser Dashboard App ─────────────────────────────────────────────
+    # â”€â”€ Browser Dashboard App â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     def _build_app(self) -> FastAPI:
         app = FastAPI(docs_url=None, redoc_url=None)
@@ -268,12 +268,12 @@ class VPSDashboard:
                 self._token_keys[tok] = entered
                 self._aes_key(entered)
                 asyncio.create_task(self.broadcast_to_browsers(
-                    {"type": "sys", "text": "Conexão remota estabelecida."}
+                    {"type": "sys", "text": "ConexÃ£o remota estabelecida."}
                 ))
                 # Notify worker
                 await self.send_to_worker({"type": "phone_connected"})
                 return JSONResponse({"ok": True, "token": tok})
-            return JSONResponse({"ok": False, "error": "Chave inválida ou expirada"}, status_code=401)
+            return JSONResponse({"ok": False, "error": "Chave invÃ¡lida ou expirada"}, status_code=401)
 
         @app.get("/auto-login")
         async def auto_login(key: str = ""):
@@ -299,7 +299,7 @@ class VPSDashboard:
             self._device_sessions[dev_tok] = {"session_key": key}
 
             asyncio.create_task(self.broadcast_to_browsers(
-                {"type": "sys", "text": "Conexão remota estabelecida via QR code."}
+                {"type": "sys", "text": "ConexÃ£o remota estabelecida via QR code."}
             ))
             await self.send_to_worker({"type": "phone_connected"})
 
@@ -317,7 +317,7 @@ class VPSDashboard:
   localStorage.setItem('jarvis_device_token','{dev_tok}');
   setTimeout(function(){{location.replace('/')}},400);
 </script>
-<p>Conectando ao JARVIS…</p>
+<p>Conectando ao JARVISâ€¦</p>
 </body></html>""")
 
         @app.post("/api/device-login")
@@ -357,7 +357,7 @@ class VPSDashboard:
         @app.post("/api/wake")
         async def wake_ep(req: Request):
             if not _auth(req):
-                return JSONResponse({"error": "Não autorizado"}, status_code=401)
+                return JSONResponse({"error": "NÃ£o autorizado"}, status_code=401)
             await self.send_to_worker({"type": "wake"})
             return JSONResponse({"ok": True})
 
@@ -371,7 +371,7 @@ class VPSDashboard:
                 "worker_connected": self._worker is not None,
             })
 
-        # ── System Metrics (forward to worker in PC mode) ────────────────────
+        # â”€â”€ System Metrics (forward to worker in PC mode) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         @app.get("/api/metrics")
         async def get_metrics(req: Request):
@@ -438,7 +438,7 @@ class VPSDashboard:
                         "mode": "cloud"
                     })
 
-        # ── Remote Control (forward to worker) ───────────────────────────────
+        # â”€â”€ Remote Control (forward to worker) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         @app.post("/api/control")
         async def remote_control(req: Request):
@@ -461,12 +461,12 @@ class VPSDashboard:
                     return JSONResponse({"ok": True, "action": action, "mode": "cloud", "note": "Controle limitado no modo cloud"})
                 return JSONResponse({"error": "Controle remoto requer modo PC (conecte seu computador)"}, status_code=400)
 
-        # ── Phone Camera → Forward to Worker ─────────────────────────────────
+        # â”€â”€ Phone Camera â†’ Forward to Worker â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         @app.post("/api/camera")
         async def phone_camera(req: Request, file: UploadFile = FastAPIFile(...)):
             if not self._worker:
-                return JSONResponse({"error": "Câmera requer modo PC (conecte seu computador)"}, status_code=400)
+                return JSONResponse({"error": "CÃ¢mera requer modo PC (conecte seu computador)"}, status_code=400)
             
             try:
                 import base64
@@ -481,11 +481,11 @@ class VPSDashboard:
                     "mime_type": mime_type
                 })
                 
-                return JSONResponse({"ok": True, "message": "Imagem enviada para análise"})
+                return JSONResponse({"ok": True, "message": "Imagem enviada para anÃ¡lise"})
             except Exception as e:
                 return JSONResponse({"error": str(e)}, status_code=500)
 
-        # ── Screen Capture → Forward to Worker ───────────────────────────────
+        # â”€â”€ Screen Capture â†’ Forward to Worker â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         @app.get("/api/screen")
         async def get_screen(req: Request):
@@ -498,11 +498,11 @@ class VPSDashboard:
             # Worker will broadcast the screen capture
             return JSONResponse({
                 "ok": True, 
-                "message": "Solicitação enviada ao PC",
+                "message": "SolicitaÃ§Ã£o enviada ao PC",
                 "pending": True
             })
 
-        # ── File listing ─────────────────────────────────────────────────────
+        # â”€â”€ File listing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         @app.get("/api/files")
         async def list_files(req: Request):
@@ -518,12 +518,12 @@ class VPSDashboard:
                 pass
             return JSONResponse({"files": files})
 
-        # ── File upload ───────────────────────────────────────────────────
+        # â”€â”€ File upload â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         if _UPLOAD_OK:
             @app.post("/api/upload")
             async def upload_file(req: Request, file: UploadFile = FastAPIFile(...)):
                 if not _auth(req):
-                    return JSONResponse({"error": "Não autorizado"}, status_code=401)
+                    return JSONResponse({"error": "NÃ£o autorizado"}, status_code=401)
                 import re
                 name = Path(file.filename or "upload").name
                 name = re.sub(r'[<>:"/\\|?*\x00-\x1f]', '_', name).strip(". ") or "upload"
@@ -545,7 +545,7 @@ class VPSDashboard:
                             if size > max_bytes:
                                 fout.close()
                                 dest.unlink(missing_ok=True)
-                                return JSONResponse({"error": f"Arquivo muito grande (máximo {MAX_UPLOAD_MB} MB)"}, status_code=413)
+                                return JSONResponse({"error": f"Arquivo muito grande (mÃ¡ximo {MAX_UPLOAD_MB} MB)"}, status_code=413)
                             fout.write(chunk)
                 except Exception as exc:
                     dest.unlink(missing_ok=True)
@@ -559,15 +559,15 @@ class VPSDashboard:
         async def download_file(filename: str, token: str = ""):
             tok = token.strip()
             if not tok or tok not in self._tokens:
-                return JSONResponse({"error": "Não autorizado"}, status_code=401)
+                return JSONResponse({"error": "NÃ£o autorizado"}, status_code=401)
             import re
             safe = re.sub(r'[/\\]', '', filename)
             path = UPLOADS_DIR / safe
             if not path.exists() or not path.is_file():
-                return JSONResponse({"error": "Não encontrado"}, status_code=404)
+                return JSONResponse({"error": "NÃ£o encontrado"}, status_code=404)
             return FileResponse(str(path), filename=safe)
 
-        # ── WebSocket (browser clients) ──────────────────────────────────
+        # â”€â”€ WebSocket (browser clients) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         @app.websocket("/ws")
         async def ws_ep(websocket: WebSocket, token: str = ""):
             await websocket.accept()
@@ -610,7 +610,7 @@ class VPSDashboard:
 
         return app
 
-    # ── Worker App (PC connects here) ─────────────────────────────────────
+    # â”€â”€ Worker App (PC connects here) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     def _build_worker_app(self) -> FastAPI:
         app = FastAPI(docs_url=None, redoc_url=None)
@@ -626,11 +626,11 @@ class VPSDashboard:
             await self.broadcast_to_browsers({
                 "type": "mode",
                 "mode": "pc",
-                "label": "🖥️ PC Mode",
+                "label": "ðŸ–¥ï¸ PC Mode",
             })
             await self.broadcast_to_browsers({
                 "type": "sys",
-                "text": "🖥️ PC conectado — modo completo ativado.",
+                "text": "ðŸ–¥ï¸ PC conectado â€” modo completo ativado.",
             })
             try:
                 while True:
@@ -646,7 +646,7 @@ class VPSDashboard:
                         await self.broadcast_to_browsers(data)
 
                     elif msg_type == "audio_data":
-                        # Audio data from JARVIS → relay to phone if connected
+                        # Audio data from JARVIS â†’ relay to phone if connected
                         await self.broadcast_to_browsers(data)
 
                     elif msg_type == "metrics":
@@ -671,18 +671,18 @@ class VPSDashboard:
                     await self.broadcast_to_browsers({
                         "type": "mode",
                         "mode": "cloud",
-                        "label": "⛅ Cloud Mode",
+                        "label": "â›… Cloud Mode",
                     })
                     await self.broadcast_to_browsers({
                         "type": "sys",
-                        "text": "⛅ PC desconectado — modo cloud ativado. Recursos limitados a: pesquisa, clima, memória.",
+                        "text": "â›… PC desconectado â€” modo cloud ativado. Recursos limitados a: pesquisa, clima, memÃ³ria.",
                     })
                 else:
                     await self.broadcast_to_browsers({"type": "status", "state": "sleeping"})
                     await self.broadcast_to_browsers({
                         "type": "mode",
                         "mode": "offline",
-                        "label": "💤 Offline",
+                        "label": "ðŸ’¤ Offline",
                     })
 
         # Worker API endpoints
@@ -707,7 +707,7 @@ class VPSDashboard:
         return app
 
 
-# ── Main ───────────────────────────────────────────────────────────────────
+# â”€â”€ Main â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def _mount_worker_routes(dashboard_app: FastAPI, vps: VPSDashboard):
     """Mount worker routes onto the main dashboard app (single-port mode)."""
@@ -720,7 +720,7 @@ async def main():
     vps = VPSDashboard()
 
     if IS_CLOUD_DEPLOY:
-        # ── Single-port mode (Railway/Render) ─────────────────────────
+        # â”€â”€ Single-port mode (Railway/Render) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         # Mount worker endpoints onto the main app
         _mount_worker_routes(vps.app, vps)
 
@@ -742,7 +742,7 @@ async def main():
         await asyncio.gather(*tasks)
 
     else:
-        # ── Dual-port mode (VPS / local dev) ─────────────────────────
+        # â”€â”€ Dual-port mode (VPS / local dev) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         cfg_dashboard = uvicorn.Config(
             vps.app, host="0.0.0.0", port=PORT, log_level="info"
         )
@@ -769,3 +769,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+

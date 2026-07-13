@@ -1,4 +1,4 @@
-#computer_control.py
+﻿#computer_control.py
 import io
 import json
 import platform
@@ -158,7 +158,7 @@ def _type(text: str, interval: float = 0.03) -> str:
     _require_pyautogui()
     time.sleep(0.3)
     pyautogui.typewrite(text, interval=interval)
-    return f"Typed: {text[:60]}{'…' if len(text) > 60 else ''}"
+    return f"Typed: {text[:60]}{'â€¦' if len(text) > 60 else ''}"
 
 
 def _smart_type(text: str, clear_first: bool = True) -> str:
@@ -172,10 +172,10 @@ def _smart_type(text: str, clear_first: bool = True) -> str:
         time.sleep(0.1)
         paste_key = "command" if _get_os() == "mac" else "ctrl"
         pyautogui.hotkey(paste_key, "v")
-        return f"Smart-typed (clipboard): {text[:60]}{'…' if len(text) > 60 else ''}"
+        return f"Smart-typed (clipboard): {text[:60]}{'â€¦' if len(text) > 60 else ''}"
 
     pyautogui.typewrite(text, interval=0.04)
-    return f"Smart-typed: {text[:60]}{'…' if len(text) > 60 else ''}"
+    return f"Smart-typed: {text[:60]}{'â€¦' if len(text) > 60 else ''}"
 
 
 def _click(x=None, y=None, button: str = "left", clicks: int = 1) -> str:
@@ -204,20 +204,20 @@ def _scroll(direction: str = "down", amount: int = 3) -> str:
     vertical   = direction in ("up", "down")
     clicks     = amount if direction in ("up", "right") else -amount
     pyautogui.scroll(clicks) if vertical else pyautogui.hscroll(clicks)
-    return f"Scrolled {direction} ×{amount}"
+    return f"Scrolled {direction} Ã—{amount}"
 
 
 def _move(x: int, y: int, duration: float = 0.3) -> str:
     _require_pyautogui()
     pyautogui.moveTo(x, y, duration=duration)
-    return f"Mouse → ({x}, {y})"
+    return f"Mouse â†’ ({x}, {y})"
 
 
 def _drag(x1: int, y1: int, x2: int, y2: int, duration: float = 0.5) -> str:
     _require_pyautogui()
     pyautogui.moveTo(x1, y1, duration=0.2)
     pyautogui.dragTo(x2, y2, duration=duration, button="left")
-    return f"Dragged ({x1},{y1}) → ({x2},{y2})"
+    return f"Dragged ({x1},{y1}) â†’ ({x2},{y2})"
 
 
 def _clipboard_get() -> str:
@@ -225,7 +225,7 @@ def _clipboard_get() -> str:
         return pyperclip.paste()
     _hotkey("ctrl", "c")
     time.sleep(0.2)
-    return "(copied — pyperclip unavailable for read)"
+    return "(copied â€” pyperclip unavailable for read)"
 
 
 def _clipboard_paste(text: str) -> str:
@@ -235,7 +235,7 @@ def _clipboard_paste(text: str) -> str:
         _require_pyautogui()
         paste_key = "command" if _get_os() == "mac" else "ctrl"
         pyautogui.hotkey(paste_key, "v")
-        return f"Pasted: {text[:60]}{'…' if len(text) > 60 else ''}"
+        return f"Pasted: {text[:60]}{'â€¦' if len(text) > 60 else ''}"
     return "pyperclip not available"
 
 
@@ -313,7 +313,7 @@ def _focus_window(title: str) -> str:
 def _screen_find(description: str) -> tuple[int, int] | None:
     api_key = _get_api_key()
     if not api_key:
-        print("[ComputerControl] ⚠️ No API key for screen_find")
+        print("[ComputerControl] âš ï¸ No API key for screen_find")
         return None
 
     try:
@@ -329,14 +329,14 @@ def _screen_find(description: str) -> tuple[int, int] | None:
 
         client = genai.Client(api_key=api_key)
         prompt = (
-            f"This is a screenshot of a {w}×{h} pixel screen. "
+            f"This is a screenshot of a {w}Ã—{h} pixel screen. "
             f"Locate the UI element described as: '{description}'. "
             f"Reply with ONLY the center coordinates as: x,y "
             f"If the element is not visible, reply: NOT_FOUND"
         )
 
         response = client.models.generate_content(
-            model="gemini-2.5-flash-lite",
+            model="gemini-2.0-flash-lite",
             contents=[
                 gtypes.Part.from_bytes(data=image_bytes, mime_type="image/png"),
                 prompt,
@@ -352,7 +352,7 @@ def _screen_find(description: str) -> tuple[int, int] | None:
             return int(match.group(1)), int(match.group(2))
 
     except Exception as e:
-        print(f"[ComputerControl] ⚠️ screen_find failed: {e}")
+        print(f"[ComputerControl] âš ï¸ screen_find failed: {e}")
 
     return None
 
@@ -383,26 +383,26 @@ def computer_control(
       path          : save path for screenshot (must be inside home dir)
 
     Actions:
-      type          — type text at cursor
-      smart_type    — clear field + type (clipboard-backed)
-      click         — left click
-      double_click  — double left click
-      right_click   — right click
-      move          — move mouse
-      drag          — click-drag between two points
-      hotkey        — key combination
-      press         — single key
-      scroll        — scroll the wheel
-      copy          — read clipboard
-      paste         — write + paste clipboard
-      screenshot    — capture screen (safe path only)
-      wait          — sleep N seconds
-      clear_field   — select-all + delete
-      focus_window  — bring window to foreground
-      screen_find   — AI element finder (returns x,y)
-      screen_click  — AI element finder + click
-      random_data   — generate fake form data
-      user_data     — pull real data from memory
+      type          â€” type text at cursor
+      smart_type    â€” clear field + type (clipboard-backed)
+      click         â€” left click
+      double_click  â€” double left click
+      right_click   â€” right click
+      move          â€” move mouse
+      drag          â€” click-drag between two points
+      hotkey        â€” key combination
+      press         â€” single key
+      scroll        â€” scroll the wheel
+      copy          â€” read clipboard
+      paste         â€” write + paste clipboard
+      screenshot    â€” capture screen (safe path only)
+      wait          â€” sleep N seconds
+      clear_field   â€” select-all + delete
+      focus_window  â€” bring window to foreground
+      screen_find   â€” AI element finder (returns x,y)
+      screen_click  â€” AI element finder + click
+      random_data   â€” generate fake form data
+      user_data     â€” pull real data from memory
     """
     params = parameters or {}
     action = params.get("action", "").lower().strip()
@@ -413,7 +413,7 @@ def computer_control(
     if player:
         player.write_log(f"[Computer] {action}")
 
-    print(f"[ComputerControl] ▶ {action}  {params}")
+    print(f"[ComputerControl] â–¶ {action}  {params}")
 
     try:
 
@@ -495,7 +495,7 @@ def computer_control(
         if action == "random_data":
             dt     = params.get("type", "name")
             result = _random_data(dt)
-            print(f"[ComputerControl] 🎲 random {dt} → {result}")
+            print(f"[ComputerControl] ðŸŽ² random {dt} â†’ {result}")
             return result
 
         if action == "user_data":
@@ -504,11 +504,11 @@ def computer_control(
             value   = profile.get(field, "")
             if not value:
                 value = _random_data(field)
-                print(f"[ComputerControl] ⚠️ No '{field}' in memory, using random: {value}")
+                print(f"[ComputerControl] âš ï¸ No '{field}' in memory, using random: {value}")
             return value
 
         return f"Unknown action: '{action}'"
 
     except Exception as e:
-        print(f"[ComputerControl] ❌ {action}: {e}")
+        print(f"[ComputerControl] âŒ {action}: {e}")
         return f"computer_control '{action}' failed: {e}"

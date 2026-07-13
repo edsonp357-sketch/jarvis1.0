@@ -1,4 +1,4 @@
-#desktop.py
+﻿#desktop.py
 import os
 import sys
 import json
@@ -122,7 +122,7 @@ Desktop path: {desktop}
 
 Generate safe Python code to accomplish the task below.
 Allowed modules ONLY:
-- pyautogui (mouse, keyboard — if needed)
+- pyautogui (mouse, keyboard â€” if needed)
 - pathlib.Path (file/folder inspection only, no deletion)
 - shutil.copy2, shutil.copytree, shutil.disk_usage (NO move, NO rmtree)
 - os_path (os.path equivalent, read-only)
@@ -142,7 +142,7 @@ Output ONLY the Python code. No explanation, no markdown, no backticks.
 Task: {task}"""
 
     try:
-        response = _client.models.generate_content(model="gemini-2.5-flash", contents=prompt)
+        response = _client.models.generate_content(model="gemini-2.0-flash", contents=prompt)
         code = response.text.strip()
         if code.startswith("```"):
             lines = code.split("\n")
@@ -335,7 +335,7 @@ def organize_desktop(mode: str = "by_type") -> str:
             continue
 
         shutil.move(str(item), str(new_path))
-        moved.append(f"{item.name} → {folder_name}/")
+        moved.append(f"{item.name} â†’ {folder_name}/")
 
     result = f"Desktop organized ({mode}): {len(moved)} files moved."
     if moved:
@@ -358,14 +358,14 @@ def list_desktop() -> str:
                 count = len(list(item.iterdir()))
             except PermissionError:
                 count = "?"
-            items.append(f"📁 {item.name}/ ({count} items)")
+            items.append(f"ðŸ“ {item.name}/ ({count} items)")
         else:
             size     = item.stat().st_size
             size_str = (
                 f"{size / 1024:.1f} KB" if size < 1024 * 1024
                 else f"{size / 1024 / 1024:.1f} MB"
             )
-            items.append(f"📄 {item.name} ({size_str})")
+            items.append(f"ðŸ“„ {item.name} ({size_str})")
 
     if not items:
         return "Desktop is empty."

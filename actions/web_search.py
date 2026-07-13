@@ -1,4 +1,4 @@
-#web_search.py
+﻿#web_search.py
 import json
 import sys
 from pathlib import Path
@@ -23,7 +23,7 @@ def _gemini_search(query: str) -> str:
 
     client   = genai.Client(api_key=_get_api_key())
     response = client.models.generate_content(
-        model="gemini-2.5-flash",
+        model="gemini-2.0-flash",
         contents=query,
         config={"tools": [{"google_search": {}}]},
     )
@@ -57,7 +57,7 @@ def _ddg_search(query: str, max_results: int = 6) -> list[dict]:
 
 
 def _ddg_news(query: str, max_results: int = 8) -> list[dict]:
-    """DDG news search — returns actual articles, not website homepages."""
+    """DDG news search â€” returns actual articles, not website homepages."""
     try:
         from ddgs import DDGS
     except ImportError:
@@ -74,7 +74,7 @@ def _ddg_news(query: str, max_results: int = 8) -> list[dict]:
                     "source":  r.get("source", ""),
                 })
     except Exception as e:
-        print(f"[WebSearch] ⚠️ DDG news() failed ({e}) — falling back to text search")
+        print(f"[WebSearch] âš ï¸ DDG news() failed ({e}) â€” falling back to text search")
         results = _ddg_search(query, max_results=max_results)
     return results
 
@@ -111,7 +111,7 @@ def _format_news(query: str, results: list[dict]) -> str:
     return "\n".join(lines).strip()
 
 
-# ── Briefing helper ────────────────────────────────────────────────────────────
+# â”€â”€ Briefing helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def _gemini_headlines(n: int = 5) -> tuple[list[str], str]:
     """
@@ -124,7 +124,7 @@ def _gemini_headlines(n: int = 5) -> tuple[list[str], str]:
 
     client = genai.Client(api_key=_get_api_key())
     response = client.models.generate_content(
-        model="gemini-2.5-flash",
+        model="gemini-2.0-flash",
         contents=f"Current world news: {n} headlines. Numbered list, titles only.",
         config={"tools": [{"google_search": {}}]},
     )
@@ -139,7 +139,7 @@ def _gemini_headlines(n: int = 5) -> tuple[list[str], str]:
         line = line.strip()
         if not line:
             continue
-        # Only accept lines that begin with a number — skips preamble/closing sentences
+        # Only accept lines that begin with a number â€” skips preamble/closing sentences
         if not re.match(r'^[\d]+[.\)\-]', line):
             continue
         clean = re.sub(r'^[\d]+[.\)\-]\s*', '', line)
@@ -150,14 +150,14 @@ def _gemini_headlines(n: int = 5) -> tuple[list[str], str]:
     return headlines[:n], raw.strip()
 
 
-# ── Modes ──────────────────────────────────────────────────────────────────────
+# â”€â”€ Modes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def _search(query: str) -> str:
-    """Default search — Gemini grounded, DDG fallback."""
+    """Default search â€” Gemini grounded, DDG fallback."""
     try:
         return _gemini_search(query)
     except Exception as e:
-        print(f"[WebSearch] ⚠️ Gemini failed ({e}) — trying DDG...")
+        print(f"[WebSearch] âš ï¸ Gemini failed ({e}) â€” trying DDG...")
         results = _ddg_search(query)
         return _format_ddg(query, results)
 
@@ -186,14 +186,14 @@ def _news(query: str) -> str:
         else:
             with lock:
                 failures[0] += 1
-                if failures[0] >= 2:   # both failed — unblock caller
+                if failures[0] >= 2:   # both failed â€” unblock caller
                     done_evt.set()
 
     def _try_gemini():
         try:
             _store(_gemini_search(gemini_query))
         except Exception as e:
-            print(f"[WebSearch] ⚠️ Gemini news failed ({e})")
+            print(f"[WebSearch] âš ï¸ Gemini news failed ({e})")
             _store("")
 
     def _try_ddg():
@@ -201,7 +201,7 @@ def _news(query: str) -> str:
             results = _ddg_news(ddg_query, max_results=8)
             _store(_format_news(ddg_query, results))
         except Exception as e:
-            print(f"[WebSearch] ⚠️ DDG news failed ({e})")
+            print(f"[WebSearch] âš ï¸ DDG news failed ({e})")
             _store("")
 
     threading.Thread(target=_try_gemini, daemon=True).start()
@@ -213,7 +213,7 @@ def _news(query: str) -> str:
 
 def _research(query: str) -> str:
     """
-    Deep dive — asks Gemini for a comprehensive answer with context.
+    Deep dive â€” asks Gemini for a comprehensive answer with context.
     Falls back to a wider DDG fetch.
     """
     research_query = (
@@ -223,18 +223,18 @@ def _research(query: str) -> str:
     try:
         return _gemini_search(research_query)
     except Exception as e:
-        print(f"[WebSearch] ⚠️ Research Gemini failed ({e}) — DDG fallback...")
+        print(f"[WebSearch] âš ï¸ Research Gemini failed ({e}) â€” DDG fallback...")
         results = _ddg_search(query, max_results=10)
         return _format_ddg(query, results)
 
 
 def _price(query: str) -> str:
-    """Product price lookup — searches for current market prices."""
-    price_query = f"current price of {query} — how much does it cost today"
+    """Product price lookup â€” searches for current market prices."""
+    price_query = f"current price of {query} â€” how much does it cost today"
     try:
         return _gemini_search(price_query)
     except Exception as e:
-        print(f"[WebSearch] ⚠️ Price Gemini failed ({e}) — DDG fallback...")
+        print(f"[WebSearch] âš ï¸ Price Gemini failed ({e}) â€” DDG fallback...")
         results = _ddg_search(f"{query} price buy", max_results=6)
         return _format_ddg(query, results)
 
@@ -247,7 +247,7 @@ def _compare(items: list[str], aspect: str) -> str:
     try:
         return _gemini_search(query)
     except Exception as e:
-        print(f"[WebSearch] ⚠️ Gemini compare failed: {e} — falling back to DDG")
+        print(f"[WebSearch] âš ï¸ Gemini compare failed: {e} â€” falling back to DDG")
 
     all_results: dict[str, list] = {}
     for item in items:
@@ -256,18 +256,18 @@ def _compare(items: list[str], aspect: str) -> str:
         except Exception:
             all_results[item] = []
 
-    lines = [f"Comparison — {aspect.upper()}", "─" * 40]
+    lines = [f"Comparison â€” {aspect.upper()}", "â”€" * 40]
     for item in items:
-        lines.append(f"\n▸ {item}")
+        lines.append(f"\nâ–¸ {item}")
         for r in all_results.get(item, [])[:2]:
             if r.get("snippet"):
-                lines.append(f"  • {r['snippet']}")
+                lines.append(f"  â€¢ {r['snippet']}")
             if r.get("url"):
                 lines.append(f"    {r['url']}")
     return "\n".join(lines)
 
 
-# ── Public entry point ─────────────────────────────────────────────────────────
+# â”€â”€ Public entry point â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def web_search(
     parameters:     dict,
@@ -290,7 +290,7 @@ def web_search(
     if player:
         player.write_log(f"[Search:{mode}] {query or ', '.join(items)}")
 
-    print(f"[WebSearch] 🔍 mode={mode!r}  query={query!r}")
+    print(f"[WebSearch] ðŸ” mode={mode!r}  query={query!r}")
 
     try:
         if mode == "compare" and items:
@@ -304,5 +304,6 @@ def web_search(
         return _search(query)
 
     except Exception as e:
-        print(f"[WebSearch] ❌ All backends failed: {e}")
+        print(f"[WebSearch] âŒ All backends failed: {e}")
         return f"Search failed: {e}"
+

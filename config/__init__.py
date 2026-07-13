@@ -1,4 +1,4 @@
-# config/__init__.py
+﻿# config/__init__.py
 import json, os, platform
 from pathlib import Path
 
@@ -24,3 +24,4 @@ def get_os() -> str:
 def is_windows() -> bool: return get_os() == "windows"
 def is_mac()     -> bool: return get_os() == "mac"
 def is_linux()   -> bool: return get_os() == "linux"
+

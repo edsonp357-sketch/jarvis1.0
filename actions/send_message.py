@@ -1,4 +1,4 @@
-import json
+﻿import json
 import subprocess
 import sys
 import time
@@ -110,7 +110,7 @@ def _open_app(app_name: str) -> bool:
             return launched
 
     except Exception as e:
-        print(f"[SendMessage] ⚠️ Could not open {app_name}: {e}")
+        print(f"[SendMessage] âš ï¸ Could not open {app_name}: {e}")
         return False
 
 
@@ -121,7 +121,7 @@ def _open_browser_url(url: str) -> bool:
         time.sleep(4.0) 
         return True
     except Exception as e:
-        print(f"[SendMessage] ⚠️ Could not open browser: {e}")
+        print(f"[SendMessage] âš ï¸ Could not open browser: {e}")
         return False
 
 def _search_in_app(query: str) -> None:
@@ -246,12 +246,12 @@ def send_message(
     if not message_text:
         return "Please specify the message content."
     if not _PYAUTOGUI:
-        return "PyAutoGUI is not installed — cannot control the desktop."
+        return "PyAutoGUI is not installed â€” cannot control the desktop."
 
-    preview = message_text[:50] + ("…" if len(message_text) > 50 else "")
-    print(f"[SendMessage] 📨 {platform} → {receiver}: {preview}")
+    preview = message_text[:50] + ("â€¦" if len(message_text) > 50 else "")
+    print(f"[SendMessage] ðŸ“¨ {platform} â†’ {receiver}: {preview}")
     if player:
-        player.write_log(f"[msg] {platform} → {receiver}")
+        player.write_log(f"[msg] {platform} â†’ {receiver}")
 
     try:
         handler = _resolve_platform(platform)
@@ -259,7 +259,7 @@ def send_message(
     except Exception as e:
         result = f"Could not send message: {e}"
 
-    print(f"[SendMessage] {'✅' if 'sent' in result.lower() else '❌'} {result}")
+    print(f"[SendMessage] {'âœ…' if 'sent' in result.lower() else 'âŒ'} {result}")
     if player:
         player.write_log(f"[msg] {result}")
 

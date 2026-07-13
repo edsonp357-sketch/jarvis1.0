@@ -1,9 +1,9 @@
-"""
-dashboard/server.py — JARVIS Local HTTP Dashboard
+﻿"""
+dashboard/server.py â€” JARVIS Local HTTP Dashboard
 
 Plain HTTP on port 8000 (no SSL warnings, no firewall issues).
 Security at the application layer: AES-256-CBC with session-key-derived key.
-CryptoJS is auto-downloaded once and served locally — no CDN needed after that.
+CryptoJS is auto-downloaded once and served locally â€” no CDN needed after that.
 
 Install deps:  pip install fastapi "uvicorn[standard]" cryptography
 """
@@ -27,7 +27,7 @@ try:
 except ImportError:
     pass
 
-# python-multipart is required for file uploads — optional dependency
+# python-multipart is required for file uploads â€” optional dependency
 _UPLOAD_OK = False
 try:
     from fastapi import UploadFile, File as FastAPIFile
@@ -69,17 +69,17 @@ def _get_gemini_key() -> str | None:
 _KEY_CHARS = [c for c in (string.ascii_uppercase + string.digits)
               if c not in ('O', 'I', 'L', '0', '1')]
 
-# ── AES-256-CBC ───────────────────────────────────────────────────────────────
+# â”€â”€ AES-256-CBC â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 _AES_SALT = b'JARVIS-DASHBOARD-v1'
 
 
 def _derive_key(session_key: str) -> bytes:
-    """SHA-256(sessionKey‖salt) → 32-byte AES-256 key (microseconds, no PBKDF2 needed)."""
+    """SHA-256(sessionKeyâ€–salt) â†’ 32-byte AES-256 key (microseconds, no PBKDF2 needed)."""
     return hashlib.sha256(session_key.encode('utf-8') + _AES_SALT).digest()
 
 
 def _decrypt_cbc(aes_key: bytes, enc_b64: str) -> str:
-    """Decrypt base64(IV[16] ‖ ciphertext) with AES-256-CBC + PKCS7."""
+    """Decrypt base64(IV[16] â€– ciphertext) with AES-256-CBC + PKCS7."""
     from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
     from cryptography.hazmat.primitives import padding as sym_pad
     raw      = base64.b64decode(enc_b64)
@@ -90,7 +90,7 @@ def _decrypt_cbc(aes_key: bytes, enc_b64: str) -> str:
     return (unpadder.update(padded) + unpadder.finalize()).decode('utf-8')
 
 
-# ── CryptoJS (auto-download once, served locally) ─────────────────────────────
+# â”€â”€ CryptoJS (auto-download once, served locally) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 _CRYPTOJS_CDN  = ("https://cdnjs.cloudflare.com/ajax/libs/"
                   "crypto-js/4.2.0/crypto-js.min.js")
 _CRYPTOJS_FILE = STATIC_DIR / "crypto-js.min.js"
@@ -99,16 +99,16 @@ _CRYPTOJS_FILE = STATIC_DIR / "crypto-js.min.js"
 def _ensure_network_access(port: int) -> None:
     """Cross-platform, best-effort: open port in the OS firewall for LAN access.
 
-    Runs in a background thread — never blocks uvicorn startup.
+    Runs in a background thread â€” never blocks uvicorn startup.
 
     Windows : writes a .bat file, runs it elevated via Windows ShellExecuteW
               (native UAC dialog, guaranteed to appear). One-time setup.
     macOS   : osascript admin dialog if the Application Firewall is on.
-    Linux   : pkexec GUI → sudo -n → prints manual command as fallback.
+    Linux   : pkexec GUI â†’ sudo -n â†’ prints manual command as fallback.
     """
     import sys, subprocess, os, tempfile, threading
 
-    # ── Windows ──────────────────────────────────────────────────────────────
+    # â”€â”€ Windows â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if sys.platform == "win32":
         import ctypes, time
 
@@ -146,7 +146,7 @@ def _ensure_network_access(port: int) -> None:
         if not need_port and not need_prog and not need_private:
             return  # already fully configured
 
-        # Build a .bat file — netsh + powershell, runs fast when elevated
+        # Build a .bat file â€” netsh + powershell, runs fast when elevated
         bat_lines = ["@echo off"]
         if need_private:
             bat_lines.append(
@@ -180,7 +180,7 @@ def _ensure_network_access(port: int) -> None:
                 pass
             return
 
-        # ── Try running directly (succeeds when already admin) ────────────────
+        # â”€â”€ Try running directly (succeeds when already admin) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         try:
             r = subprocess.run(
                 [bat_path], capture_output=True, timeout=8, shell=True
@@ -195,11 +195,11 @@ def _ensure_network_access(port: int) -> None:
         except Exception:
             pass
 
-        # ── ShellExecuteW: native UAC elevation (most reliable on Windows) ────
+        # â”€â”€ ShellExecuteW: native UAC elevation (most reliable on Windows) â”€â”€â”€â”€
         # ShellExecuteW with verb "runas" always shows the UAC dialog regardless
-        # of UAC level settings. Non-blocking — uvicorn is already running.
+        # of UAC level settings. Non-blocking â€” uvicorn is already running.
         print("[Dashboard] One-time network setup required.")
-        print("[Dashboard] >>> A Windows security dialog will appear — click 'Yes' <<<")
+        print("[Dashboard] >>> A Windows security dialog will appear â€” click 'Yes' <<<")
         try:
             ret = ctypes.windll.shell32.ShellExecuteW(
                 None,       # hwnd  (no parent window)
@@ -213,7 +213,7 @@ def _ensure_network_access(port: int) -> None:
                 # ShellExecuteW returns immediately; bat finishes in ~1 second.
                 # Sleep briefly so the rules are in place before the first retry.
                 time.sleep(2)
-                print(f"[Dashboard] Network setup complete — port {port} is open.")
+                print(f"[Dashboard] Network setup complete â€” port {port} is open.")
                 print("[Dashboard] Refresh your phone browser to connect.")
             else:
                 print("[Dashboard] Setup was not allowed.")
@@ -231,7 +231,7 @@ def _ensure_network_access(port: int) -> None:
             threading.Thread(target=_cleanup, args=(bat_path,), daemon=True).start()
         return
 
-    # ── macOS ─────────────────────────────────────────────────────────────────
+    # â”€â”€ macOS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if sys.platform == "darwin":
         fw_ctl = "/usr/libexec/ApplicationFirewall/socketfilterfw"
         try:
@@ -239,7 +239,7 @@ def _ensure_network_access(port: int) -> None:
                 [fw_ctl, "--getglobalstate"], capture_output=True, text=True, timeout=5,
             )
             if "disabled" in r.stdout.lower():
-                return  # firewall off — nothing to do
+                return  # firewall off â€” nothing to do
 
             py = sys.executable
             listed = subprocess.run(
@@ -248,7 +248,7 @@ def _ensure_network_access(port: int) -> None:
             if py in listed.stdout:
                 return  # already allowed
 
-            print("[Dashboard] One-time network setup — enter your password in the macOS dialog.")
+            print("[Dashboard] One-time network setup â€” enter your password in the macOS dialog.")
             subprocess.run(
                 ["osascript", "-e",
                  f'do shell script "{fw_ctl} --add {py} && {fw_ctl} --unblockapp {py}"'
@@ -256,10 +256,10 @@ def _ensure_network_access(port: int) -> None:
                 timeout=60,
             )
         except Exception:
-            pass  # macOS firewall is off by default — silent failure is fine
+            pass  # macOS firewall is off by default â€” silent failure is fine
         return
 
-    # ── Linux ─────────────────────────────────────────────────────────────────
+    # â”€â”€ Linux â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     def _privileged(cmd: list[str]) -> bool:
         for prefix in (["pkexec"], ["sudo", "-n"]):
             try:
@@ -304,7 +304,7 @@ def _ensure_network_access(port: int) -> None:
             else:
                 print(f"[Dashboard] Run manually:  sudo iptables -A INPUT -p tcp --dport {port} -j ACCEPT")
     except FileNotFoundError:
-        pass  # no iptables means firewall is probably off — nothing to do
+        pass  # no iptables means firewall is probably off â€” nothing to do
 
 
 def _ensure_crypto_js() -> None:
@@ -312,9 +312,9 @@ def _ensure_crypto_js() -> None:
         return
     try:
         import urllib.request
-        print("[Dashboard] Downloading CryptoJS (one-time setup)…")
+        print("[Dashboard] Downloading CryptoJS (one-time setup)â€¦")
         urllib.request.urlretrieve(_CRYPTOJS_CDN, str(_CRYPTOJS_FILE))
-        print("[Dashboard] CryptoJS cached — will serve locally from now on.")
+        print("[Dashboard] CryptoJS cached â€” will serve locally from now on.")
     except Exception as e:
         print(f"[Dashboard] CryptoJS download failed: {e}")
         print(f"[Dashboard] Encryption will fall back to CDN load on client.")
@@ -323,7 +323,7 @@ def _ensure_crypto_js() -> None:
 _ensure_crypto_js()
 
 
-# ── helpers ───────────────────────────────────────────────────────────────────
+# â”€â”€ helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def _local_ip() -> str:
     """Return the best LAN-facing IPv4 address, no internet required."""
@@ -364,29 +364,29 @@ def _read(name: str) -> str:
     return (STATIC_DIR / name).read_text(encoding="utf-8")
 
 
-# ── DashboardServer ───────────────────────────────────────────────────────────
+# â”€â”€ DashboardServer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class DashboardServer:
 
     def __init__(self):
         self._ip                          = _local_ip()
         self._tokens: set[str]            = set()
-        self._token_keys: dict[str, str]  = {}   # auth_token → session_key
-        self._aes_cache:  dict[str, bytes]= {}   # session_key → AES bytes
+        self._token_keys: dict[str, str]  = {}   # auth_token â†’ session_key
+        self._aes_cache:  dict[str, bytes]= {}   # session_key â†’ AES bytes
         self._clients: set[WebSocket]     = set()
         self._history: list[dict]         = []
         self._command_queue               = asyncio.Queue()
         self._wake_callback               = None
         self._connect_callback            = None
         self._pending_keys: dict[str, float] = {}
-        self._device_sessions: dict[str, dict] = {}  # device_token → {session_key}
+        self._device_sessions: dict[str, dict] = {}  # device_token â†’ {session_key}
         self._phone_audio_queue: asyncio.Queue    = asyncio.Queue(maxsize=200)
         self._uploads_dir                 = UPLOADS_DIR
         self._login_html                  = _read("login.html")
         self._app_html                    = _read("app.html")
         self.app                          = self._build_app()
 
-    # ── one-time key management ───────────────────────────────────────────
+    # â”€â”€ one-time key management â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     def new_key(self, expiry_secs: int = 600) -> str:
         now = time.time()
@@ -424,7 +424,7 @@ class DashboardServer:
         except Exception:
             return None
 
-    # ── callbacks ────────────────────────────────────────────────────────
+    # â”€â”€ callbacks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     def set_wake_callback(self, fn) -> None:
         self._wake_callback = fn
@@ -432,7 +432,7 @@ class DashboardServer:
     def set_connect_callback(self, fn) -> None:
         self._connect_callback = fn
 
-    # ── broadcast ────────────────────────────────────────────────────────
+    # â”€â”€ broadcast â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     async def broadcast(self, msg: dict) -> None:
         self._history.append(msg)
@@ -446,7 +446,7 @@ class DashboardServer:
                 dead.add(ws)
         self._clients -= dead
 
-    # ── FastAPI app ───────────────────────────────────────────────────────
+    # â”€â”€ FastAPI app â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     def _build_app(self) -> "FastAPI":
         app = FastAPI(docs_url=None, redoc_url=None)
@@ -492,16 +492,16 @@ class DashboardServer:
                 if self._connect_callback:
                     self._connect_callback()
                 asyncio.create_task(self.broadcast(
-                    {"type": "sys", "text": "Conexão remota estabelecida."}
+                    {"type": "sys", "text": "ConexÃ£o remota estabelecida."}
                 ))
-                # Bearer token in response body — no cookies needed (works on any browser/HTTP)
+                # Bearer token in response body â€” no cookies needed (works on any browser/HTTP)
                 return JSONResponse({"ok": True, "token": tok})
-            return JSONResponse({"ok": False, "error": "Chave inválida ou expirada"},
+            return JSONResponse({"ok": False, "error": "Chave invÃ¡lida ou expirada"},
                                 status_code=401)
 
         @app.get("/auto-login")
         async def auto_login(key: str = ""):
-            """QR code target — validates one-time key, creates session, redirects phone."""
+            """QR code target â€” validates one-time key, creates session, redirects phone."""
             now = time.time()
             if not key or key not in self._pending_keys or self._pending_keys[key] <= now:
                 return HTMLResponse("""<!DOCTYPE html>
@@ -526,7 +526,7 @@ class DashboardServer:
             if self._connect_callback:
                 self._connect_callback()
             asyncio.create_task(self.broadcast(
-                {"type": "sys", "text": "Conexão remota estabelecida via QR code."}
+                {"type": "sys", "text": "ConexÃ£o remota estabelecida via QR code."}
             ))
 
             return HTMLResponse(f"""<!DOCTYPE html>
@@ -543,7 +543,7 @@ class DashboardServer:
   localStorage.setItem('jarvis_device_token','{dev_tok}');
   setTimeout(function(){{location.replace('/')}},400);
 </script>
-<p>Conectando ao JARVIS…</p>
+<p>Conectando ao JARVISâ€¦</p>
 </body></html>""")
 
         @app.post("/api/device-login")
@@ -572,7 +572,7 @@ class DashboardServer:
         async def revoke_devices(req: Request):
             """Invalidate all persistent device tokens (admin action)."""
             if not _auth(req):
-                return JSONResponse({"error": "Não autorizado"}, status_code=401)
+                return JSONResponse({"error": "NÃ£o autorizado"}, status_code=401)
             count = len(self._device_sessions)
             self._device_sessions.clear()
             return JSONResponse({"ok": True, "revoked": count})
@@ -580,7 +580,7 @@ class DashboardServer:
         @app.post("/api/command")
         async def command(req: Request):
             if not _auth(req):
-                return JSONResponse({"error": "Não autorizado"}, status_code=401)
+                return JSONResponse({"error": "NÃ£o autorizado"}, status_code=401)
             body  = await req.json()
             token = req.headers.get("authorization", "").removeprefix("Bearer ").strip()
             enc   = body.get("enc", "")
@@ -599,17 +599,17 @@ class DashboardServer:
         @app.post("/api/wake")
         async def wake_ep(req: Request):
             if not _auth(req):
-                return JSONResponse({"error": "Não autorizado"}, status_code=401)
+                return JSONResponse({"error": "NÃ£o autorizado"}, status_code=401)
             if self._wake_callback:
                 self._wake_callback()
             return JSONResponse({"ok": True})
 
-        # ── System Metrics ──────────────────────────────────────────────────
+        # â”€â”€ System Metrics â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         @app.get("/api/metrics")
         async def get_metrics(req: Request):
             if not _auth(req):
-                return JSONResponse({"error": "Não autorizado"}, status_code=401)
+                return JSONResponse({"error": "NÃ£o autorizado"}, status_code=401)
             try:
                 from actions.system_monitor import get_system_status
                 metrics = get_system_status()
@@ -617,12 +617,12 @@ class DashboardServer:
             except Exception as e:
                 return JSONResponse({"error": str(e)}, status_code=500)
 
-        # ── Remote Control ──────────────────────────────────────────────────
+        # â”€â”€ Remote Control â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         @app.post("/api/control")
         async def remote_control(req: Request):
             if not _auth(req):
-                return JSONResponse({"error": "Não autorizado"}, status_code=401)
+                return JSONResponse({"error": "NÃ£o autorizado"}, status_code=401)
             body = await req.json()
             action = body.get("action", "")
             value = body.get("value", "")
@@ -670,14 +670,14 @@ class DashboardServer:
                     await self._command_queue.put(f"[SYSTEM_ACTION] open_app {app_name}")
                     return JSONResponse({"ok": True})
             
-            return JSONResponse({"error": f"Ação desconhecida: {action}"}, status_code=400)
+            return JSONResponse({"error": f"AÃ§Ã£o desconhecida: {action}"}, status_code=400)
 
-        # ── Phone Camera → Gemini Vision ────────────────────────────────────
+        # â”€â”€ Phone Camera â†’ Gemini Vision â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         @app.post("/api/camera")
         async def phone_camera(req: Request, file: UploadFile = FastAPIFile(...)):
             if not _auth(req):
-                return JSONResponse({"error": "Não autorizado"}, status_code=401)
+                return JSONResponse({"error": "NÃ£o autorizado"}, status_code=401)
             
             import base64
             try:
@@ -690,16 +690,16 @@ class DashboardServer:
                 if self._wake_callback:
                     self._wake_callback()
                 
-                return JSONResponse({"ok": True, "message": "Imagem enviada para análise"})
+                return JSONResponse({"ok": True, "message": "Imagem enviada para anÃ¡lise"})
             except Exception as e:
                 return JSONResponse({"error": str(e)}, status_code=500)
 
-        # ── Screen Capture → Phone ──────────────────────────────────────────
+        # â”€â”€ Screen Capture â†’ Phone â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         @app.get("/api/screen")
         async def get_screen(req: Request):
             if not _auth(req):
-                return JSONResponse({"error": "Não autorizado"}, status_code=401)
+                return JSONResponse({"error": "NÃ£o autorizado"}, status_code=401)
             
             try:
                 import base64
@@ -725,7 +725,7 @@ class DashboardServer:
             except Exception as e:
                 return JSONResponse({"error": str(e)}, status_code=500)
 
-        # ── Phone mic real-time audio → Gemini Live ──────────────────────────
+        # â”€â”€ Phone mic real-time audio â†’ Gemini Live â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         @app.websocket("/ws/phone-audio")
         async def phone_audio_ws(websocket: WebSocket, token: str = ""):
@@ -753,7 +753,7 @@ class DashboardServer:
                     {"type": "sys", "text": "Microfone do celular parado."}
                 ))
 
-        # ── File sharing ──────────────────────────────────────────────────────
+        # â”€â”€ File sharing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         def _safe_filename(raw: str) -> str:
             name = Path(raw).name                          # strip path components
@@ -764,7 +764,7 @@ class DashboardServer:
             @app.post("/api/upload")
             async def upload_file(req: Request, file: UploadFile = FastAPIFile(...)):
                 if not _auth(req):
-                    return JSONResponse({"error": "Não autorizado"}, status_code=401)
+                    return JSONResponse({"error": "NÃ£o autorizado"}, status_code=401)
 
                 safe = _safe_filename(file.filename or "upload")
                 dest = self._uploads_dir / safe
@@ -787,7 +787,7 @@ class DashboardServer:
                                 fout.close()
                                 dest.unlink(missing_ok=True)
                                 return JSONResponse(
-                                    {"error": f"Arquivo muito grande (máximo {MAX_UPLOAD_MB} MB)"},
+                                    {"error": f"Arquivo muito grande (mÃ¡ximo {MAX_UPLOAD_MB} MB)"},
                                     status_code=413,
                                 )
                             fout.write(chunk)
@@ -816,7 +816,7 @@ class DashboardServer:
         @app.get("/api/files")
         async def list_files(req: Request):
             if not _auth(req):
-                return JSONResponse({"error": "Não autorizado"}, status_code=401)
+                return JSONResponse({"error": "NÃ£o autorizado"}, status_code=401)
             files = []
             try:
                 for f in sorted(
@@ -831,14 +831,14 @@ class DashboardServer:
 
         @app.get("/uploads/{filename}")
         async def download_file(filename: str, token: str = ""):
-            # Auth via query param — browser <a download> can't send custom headers
+            # Auth via query param â€” browser <a download> can't send custom headers
             tok = token.strip()
             if not tok or tok not in self._tokens:
-                return JSONResponse({"error": "Não autorizado"}, status_code=401)
+                return JSONResponse({"error": "NÃ£o autorizado"}, status_code=401)
             safe = re.sub(r'[/\\]', '', filename)
             path = self._uploads_dir / safe
             if not path.exists() or not path.is_file():
-                return JSONResponse({"error": "Não encontrado"}, status_code=404)
+                return JSONResponse({"error": "NÃ£o encontrado"}, status_code=404)
             return FileResponse(str(path), filename=safe)
 
         @app.websocket("/ws")
@@ -871,12 +871,12 @@ class DashboardServer:
 
         return app
 
-    # ── serve ─────────────────────────────────────────────────────────────
+    # â”€â”€ serve â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     async def _serve_alias(self) -> None:
         """Second HTTPS server on PORT+1 sharing the same app and in-memory state.
         Chrome HTTPS-upgrades any bare IP:PORT the user types, so this port also needs TLS.
-        User types IP:8001 → Chrome tries https → self-signed cert warning → accept once → done."""
+        User types IP:8001 â†’ Chrome tries https â†’ self-signed cert warning â†’ accept once â†’ done."""
         ssl_key  = BASE_DIR / "config" / "certs" / "jarvis.key"
         ssl_cert = BASE_DIR / "config" / "certs" / "jarvis.crt"
         asyncio.get_event_loop().run_in_executor(None, _ensure_network_access, PORT + 1)
@@ -889,11 +889,11 @@ class DashboardServer:
 
     async def serve(self) -> None:
         if not _DEPS_OK:
-            print("[Dashboard] fastapi/uvicorn not installed — dashboard disabled.")
+            print("[Dashboard] fastapi/uvicorn not installed â€” dashboard disabled.")
             print("[Dashboard] Run:  pip install fastapi 'uvicorn[standard]' cryptography")
             return
 
-        # Firewall setup runs in a thread — uvicorn starts immediately,
+        # Firewall setup runs in a thread â€” uvicorn starts immediately,
         # no waiting for UAC dialogs or subprocess timeouts.
         asyncio.get_event_loop().run_in_executor(None, _ensure_network_access, PORT)
 
@@ -913,3 +913,4 @@ class DashboardServer:
         print(f"[Dashboard] {proto}://{self._ip}:{PORT}")
         print("[Dashboard] Press 'Remote Control' in JARVIS UI to get the QR code.")
         await uvicorn.Server(cfg).serve()
+

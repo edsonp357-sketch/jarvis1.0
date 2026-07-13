@@ -1,4 +1,4 @@
-#computer_settings.py
+﻿#computer_settings.py
 import json
 import re
 import sys
@@ -600,7 +600,7 @@ Rules:
 - Return ONLY the JSON, no explanation, no markdown."""
 
     try:
-        resp = _client.models.generate_content(model="gemini-2.5-flash-lite", contents=prompt)
+        resp = _client.models.generate_content(model="gemini-2.0-flash-lite", contents=prompt)
         text = re.sub(r"```(?:json)?", "", resp.text).strip().rstrip("`").strip()
         return json.loads(text)
     except Exception as e:

@@ -1,5 +1,5 @@
-"""
-jarvis_cloud.py — JARVIS Cloud Core (Headless)
+﻿"""
+jarvis_cloud.py â€” JARVIS Cloud Core (Headless)
 
 Runs on VPS 24/7 without a PC. Uses Gemini text API (not Live).
 Receives commands from vps_server.py, returns text responses.
@@ -31,12 +31,12 @@ from memory.memory_manager import (
 from actions.web_search import web_search as web_search_action
 from actions.proactive import ProactiveEngine
 
-# ── Config ──────────────────────────────────────────────────────────────────
+# â”€â”€ Config â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 BASE_DIR        = Path(__file__).resolve().parent
 API_CONFIG_PATH = BASE_DIR / "config" / "api_keys.json"
 PROMPT_PATH     = BASE_DIR / "core" / "prompt.txt"
-GEMINI_MODEL    = "gemini-2.5-flash"
+GEMINI_MODEL    = "gemini-2.0-flash"
 
 
 def _get_api_key() -> str:
@@ -55,18 +55,18 @@ def _load_system_prompt() -> str:
         return (
             "You are JARVIS, Tony Stark's AI assistant. "
             "Be concise, direct, and always use the provided tools to complete tasks. "
-            "Never simulate or guess results — always call the appropriate tool."
+            "Never simulate or guess results â€” always call the appropriate tool."
         )
 
 
-# ── Cloud-compatible tool declarations ──────────────────────────────────────
+# â”€â”€ Cloud-compatible tool declarations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 CLOUD_TOOLS = [
     {
         "name": "web_search",
         "description": (
             "Searches the web. Use for ANY question about current facts, events, prices, "
-            "or topics — always prefer this over guessing. "
+            "or topics â€” always prefer this over guessing. "
             "Modes: 'search' (default), 'news' (latest headlines on a topic), "
             "'research' (deep comprehensive answer), 'price' (product cost lookup), "
             "'compare' (side-by-side comparison of items)."
@@ -103,7 +103,7 @@ CLOUD_TOOLS = [
             "Call this silently whenever the user reveals something worth remembering: "
             "name, age, city, job, preferences, hobbies, relationships, projects, or future plans. "
             "Do NOT call for: weather, reminders, searches, or one-time commands. "
-            "Do NOT announce that you are saving — just call it silently. "
+            "Do NOT announce that you are saving â€” just call it silently. "
             "Values must be in English regardless of the conversation language."
         ),
         "parameters": {
@@ -112,12 +112,12 @@ CLOUD_TOOLS = [
                 "category": {
                     "type": "STRING",
                     "description": (
-                        "identity — name, age, birthday, city, job, language, nationality | "
-                        "preferences — favorite food/color/music/film/game/sport, hobbies | "
-                        "projects — active projects, goals, things being built | "
-                        "relationships — friends, family, partner, colleagues | "
-                        "wishes — future plans, things to buy, travel dreams | "
-                        "notes — habits, schedule, anything else worth remembering"
+                        "identity â€” name, age, birthday, city, job, language, nationality | "
+                        "preferences â€” favorite food/color/music/film/game/sport, hobbies | "
+                        "projects â€” active projects, goals, things being built | "
+                        "relationships â€” friends, family, partner, colleagues | "
+                        "wishes â€” future plans, things to buy, travel dreams | "
+                        "notes â€” habits, schedule, anything else worth remembering"
                     )
                 },
                 "key":   {"type": "STRING", "description": "Short snake_case key (e.g. name, favorite_food, sister_name)"},
@@ -129,7 +129,7 @@ CLOUD_TOOLS = [
 ]
 
 
-# ── Cloud-compatible weather (no browser) ───────────────────────────────────
+# â”€â”€ Cloud-compatible weather (no browser) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def _cloud_weather(city: str) -> str:
     """Get weather using Gemini grounded search instead of opening a browser."""
@@ -149,7 +149,7 @@ def _cloud_weather(city: str) -> str:
         return f"Weather lookup failed: {e}"
 
 
-# ── Cloud Core ──────────────────────────────────────────────────────────────
+# â”€â”€ Cloud Core â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class JarvisCloud:
     """Headless JARVIS that runs on VPS without PC."""
@@ -165,7 +165,7 @@ class JarvisCloud:
         self._on_response = None      # callback: async def(text: str)
         self._on_log = None           # callback: async def(text: str)
         self._running = False
-        print("[Cloud] ☁️  JARVIS Cloud Core initialized")
+        print("[Cloud] â˜ï¸  JARVIS Cloud Core initialized")
 
     def _build_system_prompt(self) -> str:
         memory = load_memory()
@@ -173,7 +173,7 @@ class JarvisCloud:
         sys_prompt = _load_system_prompt()
 
         now = datetime.now()
-        time_str = now.strftime("%A, %B %d, %Y — %I:%M %p")
+        time_str = now.strftime("%A, %B %d, %Y â€” %I:%M %p")
 
         # Cloud-specific additions
         cloud_note = (
@@ -203,7 +203,7 @@ class JarvisCloud:
         self._last_user_msg = time.monotonic()
 
         if self._on_log:
-            await self._on_log(f"[Cloud] 📥 Command: {text}")
+            await self._on_log(f"[Cloud] ðŸ“¥ Command: {text}")
 
         # Build conversation with system prompt
         system_prompt = self._build_system_prompt()
@@ -236,7 +236,7 @@ class JarvisCloud:
 
         except Exception as e:
             error_msg = f"Error processing command: {e}"
-            print(f"[Cloud] ❌ {error_msg}")
+            print(f"[Cloud] âŒ {error_msg}")
             traceback.print_exc()
             return f"I apologize, sir. I encountered an error: {str(e)[:200]}"
 
@@ -308,7 +308,7 @@ class JarvisCloud:
         """Execute a cloud-compatible tool."""
         name = fc.name
         args = dict(fc.args or {})
-        print(f"[Cloud] 🔧 {name} {args}")
+        print(f"[Cloud] ðŸ”§ {name} {args}")
 
         try:
             if name == "web_search":
@@ -325,14 +325,14 @@ class JarvisCloud:
                 value = args.get("value", "")
                 if key and value:
                     update_memory({category: {key: {"value": value}}})
-                    print(f"[Cloud Memory] 💾 {category}/{key} = {value}")
+                    print(f"[Cloud Memory] ðŸ’¾ {category}/{key} = {value}")
                 return "Memory saved."
 
             else:
                 return f"Tool '{name}' is not available in cloud mode."
 
         except Exception as e:
-            print(f"[Cloud] ❌ Tool error ({name}): {e}")
+            print(f"[Cloud] âŒ Tool error ({name}): {e}")
             return f"Tool error: {e}"
 
     async def check_proactive(self) -> str | None:
@@ -356,7 +356,7 @@ class JarvisCloud:
                     text += part.text
             return text.strip() or None
         except Exception as e:
-            print(f"[Cloud] ⚠️ Proactive check failed: {e}")
+            print(f"[Cloud] âš ï¸ Proactive check failed: {e}")
             return None
 
     async def startup_briefing(self) -> str:
@@ -375,7 +375,7 @@ class JarvisCloud:
 
         briefing_prompt = (
             f"[STARTUP_BRIEFING]\n"
-            f"It is {now.strftime('%A, %B %d, %Y — %I:%M %p')}.\n"
+            f"It is {now.strftime('%A, %B %d, %Y â€” %I:%M %p')}.\n"
             f"Good {greeting_time}. Generate a brief, warm greeting.\n"
             f"Then fetch today's top 3 news headlines using web_search tool with mode='news'.\n"
             f"Keep it concise for mobile reading.\n"
@@ -399,7 +399,7 @@ class JarvisCloud:
         self._running = False
 
 
-# ── Standalone test ─────────────────────────────────────────────────────────
+# â”€â”€ Standalone test â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async def _test():
     cloud = JarvisCloud()
@@ -428,3 +428,4 @@ async def _test():
 
 if __name__ == "__main__":
     asyncio.run(_test())
+

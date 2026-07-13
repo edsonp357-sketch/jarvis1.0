@@ -1,4 +1,4 @@
-
+﻿
 from __future__ import annotations
 
 import asyncio
@@ -22,8 +22,8 @@ _OS = platform.system()   # "Windows" | "Darwin" | "Linux"
 
 def _normalize_url(url: str) -> str:
     """
-    Bare words like "instagram" → "https://instagram.com"
-    Domains like "instagram.com" → "https://instagram.com"
+    Bare words like "instagram" â†’ "https://instagram.com"
+    Domains like "instagram.com" â†’ "https://instagram.com"
     Full URLs pass through unchanged.
     """
     url = url.strip()
@@ -31,7 +31,7 @@ def _normalize_url(url: str) -> str:
         return "about:blank"
     if "://" in url:
         return url
-    # No dot at all → assume .com  (e.g. "instagram" → "instagram.com")
+    # No dot at all â†’ assume .com  (e.g. "instagram" â†’ "instagram.com")
     if "." not in url:
         url = url + ".com"
     return "https://" + url
@@ -103,12 +103,12 @@ def _real_profile_dir(browser: str) -> str:
 
     for p in candidates:
         if p.exists():
-            print(f"[Browser] ✅ Real profile found for {browser}: {p}")
+            print(f"[Browser] âœ… Real profile found for {browser}: {p}")
             return str(p)
 
     fallback = home / ".jarvis_profiles" / browser
     fallback.mkdir(parents=True, exist_ok=True)
-    print(f"[Browser] ⚠️  Real profile not found for {browser}, using: {fallback}")
+    print(f"[Browser] âš ï¸  Real profile not found for {browser}, using: {fallback}")
     return str(fallback)
 
 def _firefox_profile_dir() -> Optional[str]:
@@ -275,7 +275,7 @@ def _resolve_browser(name: str) -> dict | None:
     if spec.get("special") == "opera_windows":
         exe = _find_opera_windows()
         if not exe:
-            print(f"[Browser] ⚠️  Opera executable not found on Windows.")
+            print(f"[Browser] âš ï¸  Opera executable not found on Windows.")
         return {"engine": engine, "exe": exe, "channel": channel}
 
     for b in bins:
@@ -346,8 +346,8 @@ def _detect_default_browser() -> str:
 
 class _BrowserSession:
     """
-    Bir tarayıcı örneği için tam oturum.
-    Tüm tarayıcılar launch_persistent_context ile gerçek profil üzerinde açılır.
+    Bir tarayÄ±cÄ± Ã¶rneÄŸi iÃ§in tam oturum.
+    TÃ¼m tarayÄ±cÄ±lar launch_persistent_context ile gerÃ§ek profil Ã¼zerinde aÃ§Ä±lÄ±r.
     """
 
     def __init__(self, browser_name: str):
@@ -408,8 +408,8 @@ class _BrowserSession:
 
     async def _launch(self):
         """
-        Tarayıcıyı gerçek kullanıcı profiliyle başlatır.
-        Context zaten açıksa hiçbir şey yapmaz.
+        TarayÄ±cÄ±yÄ± gerÃ§ek kullanÄ±cÄ± profiliyle baÅŸlatÄ±r.
+        Context zaten aÃ§Ä±ksa hiÃ§bir ÅŸey yapmaz.
         """
         if self._context is not None:
             return
@@ -446,7 +446,7 @@ class _BrowserSession:
 
             await asyncio.sleep(0.5)  
             self._page = await self._context.new_page()
-            print(f"[Browser] ✅ Firefox launched")
+            print(f"[Browser] âœ… Firefox launched")
             return
 
         if engine_name == "webkit":
@@ -461,7 +461,7 @@ class _BrowserSession:
             self._context = await engine_obj.launch_persistent_context(safari_profile, **kwargs)
             await asyncio.sleep(0.5)
             self._page = await self._context.new_page()
-            print(f"[Browser] ✅ Safari launched")
+            print(f"[Browser] âœ… Safari launched")
             return
 
         profile = _real_profile_dir(self.browser_name)
@@ -495,10 +495,10 @@ class _BrowserSession:
             self._context = await engine_obj.launch_persistent_context(profile, **kwargs)
             await asyncio.sleep(0.5) 
             self._page = await self._context.new_page()
-            print(f"[Browser] ✅ Launched [{label}] profile={profile}")
+            print(f"[Browser] âœ… Launched [{label}] profile={profile}")
             return
         except Exception as e:
-            print(f"[Browser] ⚠️  Real profile failed for {label}: {e}")
+            print(f"[Browser] âš ï¸  Real profile failed for {label}: {e}")
 
         jarvis_profile = str(Path.home() / ".jarvis_profiles" / self.browser_name)
         Path(jarvis_profile).mkdir(parents=True, exist_ok=True)
@@ -508,7 +508,7 @@ class _BrowserSession:
             self._context = await engine_obj.launch_persistent_context(jarvis_profile, **kwargs)
             await asyncio.sleep(0.5)
             self._page = await self._context.new_page()
-            print(f"[Browser] ✅ Launched [{label}] with JARVIS profile")
+            print(f"[Browser] âœ… Launched [{label}] with JARVIS profile")
         except Exception as e2:
             raise RuntimeError(f"Could not launch {self.browser_name}: {e2}") from e2
 
@@ -533,7 +533,7 @@ class _BrowserSession:
                 await p.goto(url, wait_until="domcontentloaded", timeout=30_000)
                 await asyncio.sleep(0.3)
             except PlaywrightTimeout:
-                pass   # page may have partially loaded — check URL below
+                pass   # page may have partially loaded â€” check URL below
             except Exception as e:
                 print(f"[Browser] goto exception (non-fatal): {e}")
             return p.url
@@ -541,7 +541,7 @@ class _BrowserSession:
         result_url = await _do_goto(page)
 
         if result_url in ("about:blank", "", None, prev_url) and prev_url in ("about:blank", "", None):
-            print(f"[Browser] Still blank after goto — retrying on new tab: {url}")
+            print(f"[Browser] Still blank after goto â€” retrying on new tab: {url}")
             try:
                 new_page   = await self._context.new_page()
                 self._page = new_page
@@ -627,9 +627,9 @@ class _BrowserSession:
                 el = page.locator(selector).first
                 await el.clear()
                 await el.type(str(value), delay=40)
-                results.append(f"✓ {selector}")
+                results.append(f"âœ“ {selector}")
             except Exception as e:
-                results.append(f"✗ {selector}: {e}")
+                results.append(f"âœ— {selector}: {e}")
         return "Form filled: " + ", ".join(results)
 
     async def smart_click(self, description: str) -> str:
@@ -735,7 +735,7 @@ class _BrowserSession:
         return f"{self.browser_name} closed."
 
 class _SessionRegistry:
-    """Tüm aktif tarayıcı oturumlarını yönetir."""
+    """TÃ¼m aktif tarayÄ±cÄ± oturumlarÄ±nÄ± yÃ¶netir."""
 
     def __init__(self):
         self._sessions:       dict[str, _BrowserSession] = {}
@@ -763,7 +763,7 @@ class _SessionRegistry:
         browser_name = _ALIASES.get(browser_name.lower().strip(), browser_name.lower().strip())
         self._get_or_create(browser_name)
         self._active_browser = browser_name
-        return f"Active browser → {browser_name}"
+        return f"Active browser â†’ {browser_name}"
 
     def close_one(self, browser_name: str) -> str:
         with self._lock:
@@ -794,8 +794,8 @@ class _SessionRegistry:
                 return "No active browser sessions."
             lines = []
             for name in self._sessions:
-                marker = " ◀ active" if name == self._active_browser else ""
-                lines.append(f"  • {name}{marker}")
+                marker = " â—€ active" if name == self._active_browser else ""
+                lines.append(f"  â€¢ {name}{marker}")
             return "Open browsers:\n" + "\n".join(lines)
 
 
