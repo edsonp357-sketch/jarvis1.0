@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+cryptography
+google-genai
+google-generativeai
+duckduckgo-search
+requests
+python-multipart

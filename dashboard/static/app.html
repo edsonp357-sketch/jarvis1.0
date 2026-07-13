@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>JARVIS Dashboard</title>
+  <title>Painel JARVIS</title>
   <script src="/static/crypto.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -49,6 +49,14 @@
     }
     .enc-badge.on  { display: block; background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.25); color: var(--green); }
     .enc-badge.off { display: block; background: rgba(255,100,100,0.08); border: 1px solid rgba(255,100,100,0.2); color: #f87171; }
+    .mode-badge {
+      font-size: 9px; font-weight: 700; letter-spacing: 1px; padding: 3px 10px;
+      border-radius: 99px; transition: all 0.3s;
+    }
+    .mode-badge.cloud { background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.3); color: #818cf8; }
+    .mode-badge.pc    { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.25); color: var(--green); }
+    .mode-badge.offline { background: rgba(255,100,100,0.08); border: 1px solid rgba(255,100,100,0.2); color: #f87171; }
+    .cloud-tag { display: inline-block; font-size: 8px; font-weight: 700; letter-spacing: 1px; padding: 1px 6px; border-radius: 4px; background: rgba(99,102,241,0.15); color: #818cf8; margin-left: 6px; vertical-align: middle; }
     .url { font-size: 10px; font-family: monospace; color: var(--muted); padding: 4px 9px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; }
 
     /* ── FEED ── */
@@ -137,19 +145,20 @@
   <div id="toast"></div>
   <header>
     <div class="logo"><em>J</em>ARVIS</div>
-    <div class="pill" id="pill"><span class="dot"></span><span id="st">Connecting</span></div>
+    <div class="pill" id="pill"><span class="dot"></span><span id="st">Conectando</span></div>
+    <div class="mode-badge cloud" id="modeBadge">⛅ CLOUD</div>
     <div class="enc-badge" id="enc">AES-256</div>
     <div class="spacer"></div>
-    <div class="url">__IP__:__PORT__</div>
+    <div class="url" id="hostUrl">__IP__:__PORT__</div>
   </header>
   <main id="feed"></main>
   <footer>
-    <input id="inp" placeholder="Send a command to JARVIS…" autocomplete="off">
-    <label class="btn-attach" for="file-inp" title="Send file">📎</label>
+    <input id="inp" placeholder="Envie um comando para o JARVIS…" autocomplete="off">
+    <label class="btn-attach" for="file-inp" title="Enviar arquivo">📎</label>
     <input type="file" id="file-inp" multiple accept="*/*" style="display:none">
-    <button id="mic-btn" onclick="doMic()" title="Voice command">🎤</button>
-    <button class="btn btn-wake" id="wake" onclick="doWake()">WAKE</button>
-    <button class="btn btn-send" onclick="doSend()">SEND</button>
+    <button id="mic-btn" onclick="doMic()" title="Comando de voz">🎤</button>
+    <button class="btn btn-wake" id="wake" onclick="doWake()">ACORDAR</button>
+    <button class="btn btn-send" onclick="doSend()">ENVIAR</button>
   </footer>
 
   <script>
@@ -160,6 +169,10 @@
     if (!_authToken) {
       location.replace('/login');
     }
+
+    // Update host display dynamically
+    const _hostEl = document.getElementById('hostUrl');
+    if (_hostEl) _hostEl.textContent = location.host;
 
     function _authHeader() { return { 'Authorization': `Bearer ${_authToken}` }; }
     function _authFetch(url, opts = {}) {
@@ -198,7 +211,7 @@
     const _encReady = _sessionKey ? _initCrypto(_sessionKey) : false;
     const encBadge  = document.getElementById('enc');
     if (_encReady) { encBadge.className = 'enc-badge on'; }
-    else           { encBadge.className = 'enc-badge off'; encBadge.textContent = 'NO ENC'; }
+    else           { encBadge.className = 'enc-badge off'; encBadge.textContent = 'SEM CRIPTO'; }
 
     // ── WebSocket ─────────────────────────────────────────────────────────────
     const feed  = document.getElementById('feed');
@@ -210,34 +223,52 @@
     const _wsUrl   = `${_wsProto}://${location.host}/ws?token=${encodeURIComponent(_authToken)}`;
     const ws       = new WebSocket(_wsUrl);
 
-    ws.onopen    = () => { sys('Remote session active.'); toast('Connected to JARVIS'); };
-    ws.onclose   = () => sys('Connection lost — refresh to reconnect.');
-    ws.onerror   = () => sys('Connection error.');
+    ws.onopen    = () => { sys('Sessão remota ativa.'); toast('Conectado ao JARVIS'); };
+    ws.onclose   = () => sys('Conexão perdida — atualize para reconectar.');
+    ws.onerror   = () => sys('Erro de conexão.');
     ws.onmessage = (e) => {
       const m = JSON.parse(e.data);
-      if (m.type === 'log')           append(m.speaker, m.text);
+      if (m.type === 'log')           append(m.speaker, m.text, m.cloud);
       if (m.type === 'status')        setStatus(m.state);
-      if (m.type === 'wake')          sys('Wake word detected — connecting…');
+      if (m.type === 'mode')          setMode(m.mode, m.label);
+      if (m.type === 'wake')          sys('Palavra de acionamento detectada — conectando…');
       if (m.type === 'sys')           sys(m.text);
       if (m.type === 'file_received') _onFileReceived(m);
     };
 
-    function setStatus(s) {
-      if (s === 'active') {
-        pill.className = 'pill on'; stTxt.textContent = 'Active'; wake.classList.remove('show');
+    const modeBadge = document.getElementById('modeBadge');
+
+    function setMode(mode, label) {
+      if (mode === 'pc') {
+        modeBadge.className = 'mode-badge pc'; modeBadge.textContent = '🖥️ PC';
+      } else if (mode === 'cloud') {
+        modeBadge.className = 'mode-badge cloud'; modeBadge.textContent = '⛅ CLOUD';
       } else {
-        pill.className = 'pill'; stTxt.textContent = 'Sleeping'; wake.classList.add('show');
+        modeBadge.className = 'mode-badge offline'; modeBadge.textContent = '💤 OFFLINE';
       }
     }
 
-    function append(speaker, text) {
+    function setStatus(s) {
+      if (s === 'active') {
+        pill.className = 'pill on'; stTxt.textContent = 'Ativo'; wake.classList.remove('show');
+      } else if (s === 'cloud_idle') {
+        pill.className = 'pill on'; stTxt.textContent = 'Cloud'; wake.classList.remove('show');
+      } else if (s === 'thinking') {
+        pill.className = 'pill on'; stTxt.textContent = 'Pensando…'; wake.classList.remove('show');
+      } else {
+        pill.className = 'pill'; stTxt.textContent = 'Em espera'; wake.classList.add('show');
+      }
+    }
+
+    function append(speaker, text, isCloud) {
       const d = document.createElement('div');
       if (speaker === 'jarvis') {
         d.className = 'msg msg-j';
-        d.innerHTML = `<div class="lbl">Jarvis</div>${esc(text)}`;
+        const cloudTag = isCloud ? '<span class="cloud-tag">☁️ CLOUD</span>' : '';
+        d.innerHTML = `<div class="lbl">Jarvis${cloudTag}</div>${esc(text)}`;
       } else {
         d.className = 'msg msg-u';
-        d.innerHTML = `<div class="lbl">You</div>${esc(text)}`;
+        d.innerHTML = `<div class="lbl">Você</div>${esc(text)}`;
       }
       feed.appendChild(d);
       feed.scrollTop = feed.scrollHeight;
@@ -286,7 +317,7 @@
       card.innerHTML = `
         <div class="fc-icon">${_fileIcon(file.name)}</div>
         <div class="fc-meta">
-          <div class="fc-lbl">Sending</div>
+          <div class="fc-lbl">Enviando</div>
           <div class="fc-name">${esc(file.name)}</div>
           <div class="fc-size">${_fmtSize(file.size)}</div>
           <div class="fc-bar-wrap"><div class="fc-bar" id="${id}_bar"></div></div>
@@ -320,12 +351,12 @@
           const dlUrl = `/uploads/${encodeURIComponent(savedName)}?token=${encodeURIComponent(_authToken)}`;
           if (bar)  { bar.style.width = '100%'; bar.style.background = 'var(--green)'; }
           if (st)   { st.textContent = '✓'; st.className = 'fc-status done'; }
-          if (lbl)  lbl.textContent = 'Sent';
+          if (lbl)  lbl.textContent = 'Enviado';
           if (meta) meta.insertAdjacentHTML('beforeend',
-            `<a class="fc-dl" href="${dlUrl}" download="${esc(savedName)}">⬇ Download back</a>`);
-          toast('File sent!');
+            `<a class="fc-dl" href="${dlUrl}" download="${esc(savedName)}">⬇ Baixar novamente</a>`);
+          toast('Arquivo enviado!');
         } else {
-          let errMsg = 'Upload failed';
+          let errMsg = 'Falha no envio';
           try { errMsg = JSON.parse(xhr.responseText).error || errMsg; } catch {}
           if (bar) bar.style.background = '#f87171';
           if (st)  { st.textContent = 'ERR'; st.className = 'fc-status err'; }
@@ -337,7 +368,7 @@
         const st  = document.getElementById(`${id}_st`);
         const lbl = card.querySelector('.fc-lbl');
         if (st)  { st.textContent = 'ERR'; st.className = 'fc-status err'; }
-        if (lbl) lbl.textContent = 'Connection error';
+        if (lbl) lbl.textContent = 'Erro de conexão';
       };
 
       const fd = new FormData();
@@ -353,16 +384,16 @@
       card.innerHTML = `
         <div class="fc-icon">${_fileIcon(m.name)}</div>
         <div class="fc-meta">
-          <div class="fc-lbl">Received</div>
+          <div class="fc-lbl">Recebido</div>
           <div class="fc-name">${esc(m.name)}</div>
           <div class="fc-size">${_fmtSize(m.size)}</div>
-          <a class="fc-dl" href="${dlUrl}" download="${esc(m.name)}">⬇ Download</a>
+          <a class="fc-dl" href="${dlUrl}" download="${esc(m.name)}">⬇ Baixar</a>
         </div>
         <div class="fc-status done">✓</div>
       `;
       feed.appendChild(card);
       feed.scrollTop = feed.scrollHeight;
-      toast('File received on computer!');
+      toast('Arquivo recebido no computador!');
     }
 
     // File input change handler
@@ -388,7 +419,7 @@
     }
 
     function doWake() {
-      sys('Sending wake signal…');
+      sys('Enviando sinal de acionamento…');
       _authFetch('/api/wake', { method: 'POST' });
     }
 
@@ -414,7 +445,7 @@
 
     function _micIdle() {
       micBtn.innerHTML = '🎤';
-      micBtn.title     = 'Voice — tap to speak';
+      micBtn.title     = 'Voz — toque para falar';
       micBtn.classList.remove('recording');
     }
 
@@ -446,19 +477,19 @@
         'animation:pop 0.18s ease'
       ].join(';');
       card.innerHTML =
-        '<div style="font-weight:700;color:#818cf8;letter-spacing:.5px;margin-bottom:10px">🎤 One-time voice setup</div>' +
+        '<div style="font-weight:700;color:#818cf8;letter-spacing:.5px;margin-bottom:10px">🎤 Configuração de voz (uma vez)</div>' +
         '<ol style="padding-left:18px;color:#8899aa;margin:0;display:flex;flex-direction:column;gap:4px">' +
-        '<li>Open a new tab → go to <span style="background:rgba(255,255,255,0.07);padding:1px 6px;border-radius:4px;font-family:monospace;font-size:12px">chrome://flags</span></li>' +
-        '<li>Search: <strong style="color:#dde3ed">Insecure origins treated as secure</strong></li>' +
-        '<li>Paste this URL into the box:<br><span id="flags-url" style="background:rgba(255,255,255,0.07);padding:2px 8px;border-radius:4px;font-family:monospace;font-size:11px;user-select:all;cursor:pointer">' + esc(origin) + '</span></li>' +
-        '<li>Set to <strong style="color:#22c55e">Enabled</strong> → tap <strong style="color:#dde3ed">Relaunch</strong></li>' +
-        '<li>Return here and tap 🎤</li>' +
+        '<li>Abra uma nova aba → acesse <span style="background:rgba(255,255,255,0.07);padding:1px 6px;border-radius:4px;font-family:monospace;font-size:12px">chrome://flags</span></li>' +
+        '<li>Busque: <strong style="color:#dde3ed">Insecure origins treated as secure</strong></li>' +
+        '<li>Cole esta URL no campo:<br><span id="flags-url" style="background:rgba(255,255,255,0.07);padding:2px 8px;border-radius:4px;font-family:monospace;font-size:11px;user-select:all;cursor:pointer">' + esc(origin) + '</span></li>' +
+        '<li>Defina como <strong style="color:#22c55e">Enabled</strong> → toque em <strong style="color:#dde3ed">Relaunch</strong></li>' +
+        '<li>Volte aqui e toque em 🎤</li>' +
         '</ol>';
       feed.appendChild(card);
       feed.scrollTop = feed.scrollHeight;
       // tap to copy
       card.querySelector('#flags-url').addEventListener('click', () => {
-        navigator.clipboard?.writeText(origin).then(() => toast('URL copied!')).catch(() => {});
+        navigator.clipboard?.writeText(origin).then(() => toast('URL copiada!')).catch(() => {});
       });
     }
 
@@ -476,8 +507,8 @@
         });
       } catch (e) {
         sys(e.name === 'NotAllowedError'
-          ? 'Microphone denied — tap the address bar lock and allow microphone.'
-          : 'Mic error: ' + e.message);
+          ? 'Microfone negado — toque no cadeado da barra de endereço e permita o microfone.'
+          : 'Erro no microfone: ' + e.message);
         return;
       }
 
@@ -530,14 +561,14 @@
         }
 
         micBtn.innerHTML = '⏹';
-        micBtn.title     = 'Tap to stop';
+        micBtn.title     = 'Toque para parar';
         micBtn.classList.add('recording');
-        sys('Voice live — speak now');
-        toast('🎤 Live');
+        sys('Voz ativa — fale agora');
+        toast('🎤 Ao vivo');
       };
 
       ws.onclose = () => { _stopVoice(); };
-      ws.onerror = () => { sys('Voice connection failed.'); _stopVoice(); };
+      ws.onerror = () => { sys('Falha na conexão de voz.'); _stopVoice(); };
 
       _voiceWs  = ws;
       _audioCtx = ctx;

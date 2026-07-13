@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Secrets — NEVER commit
+config/api_keys.json
+config/certs/
+
+# Logs & runtime
+*.log
+*.pid
+jarvis_service.log
+jarvis_service.pid
+
+# Memory (user-specific data)
+memory/long_term.json
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Uploads
+JARVIS Uploads/

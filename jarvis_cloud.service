@@ -1,0 +1,27 @@
+[Unit]
+Description=JARVIS Cloud AI Assistant (24/7)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/jarvis
+ExecStart=/usr/bin/python3 vps_server.py
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+StandardOutput=journal
+StandardError=journal
+
+# Graceful stop
+TimeoutStopSec=10
+KillMode=mixed
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/opt/jarvis /root
+
+[Install]
+WantedBy=multi-user.target

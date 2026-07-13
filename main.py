@@ -25,6 +25,9 @@ import traceback
 from datetime import datetime
 from pathlib import Path
 
+# Check for --remote flag
+REMOTE_MODE = "--remote" in sys.argv
+
 import sounddevice as sd
 from google import genai
 from google.genai import types
@@ -538,6 +541,7 @@ class JarvisLive:
         self.ui.on_interrupt      = self.interrupt
         self._turn_done_event: asyncio.Event | None = None
         self._dashboard     = None
+        self._worker        = None
         self._briefing_sent    = False          # morning briefing fires once per process
         self._sys_monitor      = SystemMonitor()  # persistent cooldown state
         self._proactive        = ProactiveEngine()
@@ -545,10 +549,28 @@ class JarvisLive:
 
     def _make_remote_key(self):
         """Called from Qt main thread when user presses Remote Control."""
+        if REMOTE_MODE:
+            # In remote mode, generate key via VPS API
+            import urllib.request
+            import json as _json
+            try:
+                req = urllib.request.Request(
+                    "http://52.15.103.205:8888/api/new-key",
+                    method="POST",
+                    headers={"Content-Type": "application/json"}
+                )
+                resp = urllib.request.urlopen(req, timeout=5)
+                data = _json.loads(resp.read())
+                key = data.get("key", "")
+                url = "http://52.15.103.205:8888"
+                return url, key, f"{url}/auto-login?key={key}", url
+            except Exception as e:
+                self.ui.write_log(f"SYS: Erro ao gerar chave no VPS: {e}")
+                return None
         if self._dashboard is None:
             self.ui.write_log(
-                "SYS: Dashboard unavailable. "
-                "Run: pip install fastapi \"uvicorn[standard]\" cryptography"
+                "SYS: Dashboard indisponível. "
+                "Execute: pip install fastapi \"uvicorn[standard]\" cryptography"
             )
             return None
         key    = self._dashboard.new_key()
@@ -901,6 +923,8 @@ class JarvisLive:
                                         "text": full_in,
                                         "ts": datetime.now().isoformat(),
                                     }))
+                                elif self._worker:
+                                    asyncio.create_task(self._worker.send_log("user", full_in))
                             in_buf = []
 
                             full_out = " ".join(out_buf).strip()
@@ -912,6 +936,8 @@ class JarvisLive:
                                         "text": full_out,
                                         "ts": datetime.now().isoformat(),
                                     }))
+                                elif self._worker:
+                                    asyncio.create_task(self._worker.send_log("jarvis", full_out))
                             out_buf = []
 
                             # Vision injection: model finished tool-response turn → now send the image
@@ -1180,22 +1206,72 @@ class JarvisLive:
                 print(f"[Dashboard] Command error: {e}")
                 await asyncio.sleep(0.5)
 
+    # ── worker command relay (remote mode) ─────────────────────────────────
+
+    async def _relay_worker_commands(self) -> None:
+        """Relay commands from VPS worker to JARVIS core."""
+        while True:
+            try:
+                if self._worker and self._worker._jarvis_queue:
+                    text = await asyncio.wait_for(
+                        self._worker._jarvis_queue.get(), timeout=0.5
+                    )
+                    if not text:
+                        continue
+                    # Wait up to 8s for session to become ready
+                    for _ in range(80):
+                        if self.session:
+                            break
+                        await asyncio.sleep(0.1)
+                    if self.session:
+                        await self.session.send_client_content(
+                            turns={"parts": [{"text": text}]},
+                            turn_complete=True,
+                        )
+                        self.ui.write_log(f"[VPS]: {text}")
+                        # Send log to VPS for display
+                        await self._worker.send_log("user", text)
+                    else:
+                        print(f"[Worker] Dropped command (no session): {text}")
+                else:
+                    await asyncio.sleep(0.5)
+            except asyncio.TimeoutError:
+                pass
+            except Exception as e:
+                print(f"[Worker] Relay error: {e}")
+                await asyncio.sleep(0.5)
+
     # ── main loop ───────────────────────────────────────────────────────────
 
     async def run(self):
         self._loop = asyncio.get_event_loop()
 
         # Start dashboard (optional — needs: pip install fastapi "uvicorn[standard]" cryptography)
-        try:
-            from dashboard.server import DashboardServer
-            self._dashboard = DashboardServer()
-            self._dashboard.set_connect_callback(self._on_phone_connected)
-            asyncio.create_task(self._dashboard.serve())
-            # Runs for the whole lifetime, not just inside an active session
-            asyncio.create_task(self._process_dashboard_commands())
-        except Exception as e:
-            print(f"[Dashboard] Disabled: {e}")
-            self._dashboard = None
+        if REMOTE_MODE:
+            # Remote mode: connect to VPS instead of running local dashboard
+            try:
+                from dashboard.worker import get_worker
+                self._worker = get_worker()
+                self._dashboard = None
+                asyncio.create_task(self._worker.connect())
+                asyncio.create_task(self._relay_worker_commands())
+                print("[JARVIS] 🔗 Modo remoto: conectando ao VPS...")
+            except Exception as e:
+                print(f"[Worker] Disabled: {e}")
+                self._worker = None
+                self._dashboard = None
+        else:
+            # Local mode: run dashboard on this machine
+            try:
+                from dashboard.server import DashboardServer
+                self._dashboard = DashboardServer()
+                self._dashboard.set_connect_callback(self._on_phone_connected)
+                asyncio.create_task(self._dashboard.serve())
+                # Runs for the whole lifetime, not just inside an active session
+                asyncio.create_task(self._process_dashboard_commands())
+            except Exception as e:
+                print(f"[Dashboard] Disabled: {e}")
+                self._dashboard = None
 
         while True:
             try:
@@ -1232,6 +1308,8 @@ class JarvisLive:
 
                     if self._dashboard:
                         await self._dashboard.broadcast({"type": "status", "state": "active"})
+                    elif self._worker:
+                        await self._worker.send_status("active")
 
                     tg.create_task(self._send_realtime())
                     tg.create_task(self._listen_audio())
@@ -1294,6 +1372,8 @@ class JarvisLive:
 
             if self._dashboard:
                 await self._dashboard.broadcast({"type": "status", "state": "sleeping"})
+            elif self._worker:
+                await self._worker.send_status("sleeping")
 
             delay = getattr(self, "_conn_backoff", 3)
             print(f"[JARVIS] Reconnecting in {delay}s...")
