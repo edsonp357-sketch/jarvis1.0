@@ -24,7 +24,7 @@ except ImportError:
     exit(1)
 
 # ── Config ──────────────────────────────────────────────────────────────────
-VPS_URL = "ws://52.15.103.205:8889/ws/worker"
+VPS_URL = "wss://jarvis1-0-j5if.onrender.com/ws/worker"
 RECONNECT_DELAY = 5
 MAX_RECONNECT = 60
 

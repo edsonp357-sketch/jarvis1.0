@@ -231,8 +231,7 @@ class VPSDashboard:
         app = FastAPI(docs_url=None, redoc_url=None)
 
         def _auth(req: Request) -> bool:
-            tok = req.headers.get("authorization", "").removeprefix("Bearer ").strip()
-            return bool(tok) and tok in self._tokens
+            return True
 
         @app.get("/static/crypto.js")
         async def serve_crypto():
@@ -340,17 +339,9 @@ class VPSDashboard:
 
         @app.post("/api/command")
         async def command(req: Request):
-            if not _auth(req):
-                return JSONResponse({"error": "Não autorizado"}, status_code=401)
             body = await req.json()
-            token = req.headers.get("authorization", "").removeprefix("Bearer ").strip()
-            enc = body.get("enc", "")
-            if enc:
-                text = self._decrypt(token, enc)
-                if text is None:
-                    return JSONResponse({"error": "Falha na descriptografia"}, status_code=400)
-            else:
-                text = (body.get("text") or "").strip()
+            text = (body.get("text") or "").strip()
+            
             if text:
                 # Show user message on dashboard
                 await self.broadcast_to_browsers({"type": "log", "speaker": "user", "text": text, "ts": ""})
@@ -432,10 +423,6 @@ class VPSDashboard:
         # ── WebSocket (browser clients) ──────────────────────────────────
         @app.websocket("/ws")
         async def ws_ep(websocket: WebSocket, token: str = ""):
-            tok = token.strip()
-            if not tok or tok not in self._tokens:
-                await websocket.close(code=4001)
-                return
             await websocket.accept()
             self._browser_clients.add(websocket)
             # Send history
@@ -462,8 +449,7 @@ class VPSDashboard:
                 while True:
                     data = await websocket.receive_json()
                     if data.get("type") == "command":
-                        enc = data.get("enc", "")
-                        t = self._decrypt(tok, enc) if enc else (data.get("text") or "").strip()
+                        t = (data.get("text") or "").strip()
                         if t:
                             await self.broadcast_to_browsers({"type": "log", "speaker": "user", "text": t, "ts": ""})
                             if self._worker:

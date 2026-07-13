@@ -550,23 +550,8 @@ class JarvisLive:
     def _make_remote_key(self):
         """Called from Qt main thread when user presses Remote Control."""
         if REMOTE_MODE:
-            # In remote mode, generate key via VPS API
-            import urllib.request
-            import json as _json
-            try:
-                req = urllib.request.Request(
-                    "http://52.15.103.205:8888/api/new-key",
-                    method="POST",
-                    headers={"Content-Type": "application/json"}
-                )
-                resp = urllib.request.urlopen(req, timeout=5)
-                data = _json.loads(resp.read())
-                key = data.get("key", "")
-                url = "http://52.15.103.205:8888"
-                return url, key, f"{url}/auto-login?key={key}", url
-            except Exception as e:
-                self.ui.write_log(f"SYS: Erro ao gerar chave no VPS: {e}")
-                return None
+            url = "https://jarvis1-0-j5if.onrender.com"
+            return url, "ABERTO", url, url
         if self._dashboard is None:
             self.ui.write_log(
                 "SYS: Dashboard indisponível. "
