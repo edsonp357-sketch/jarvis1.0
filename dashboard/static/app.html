@@ -2,21 +2,24 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Painel JARVIS</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>JARVIS Remote</title>
   <script src="/static/crypto.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg:      #07090f;
+      --bg: #07090f;
       --surface: rgba(255,255,255,0.04);
-      --border:  rgba(255,255,255,0.07);
-      --accent:  #6366f1;
-      --adim:    rgba(99,102,241,0.14);
-      --text:    #dde3ed;
-      --muted:   #5e6a7e;
-      --green:   #22c55e;
-      --gdim:    rgba(34,197,94,0.14);
+      --border: rgba(255,255,255,0.07);
+      --accent: #6366f1;
+      --adim: rgba(99,102,241,0.14);
+      --text: #dde3ed;
+      --muted: #5e6a7e;
+      --green: #22c55e;
+      --gdim: rgba(34,197,94,0.14);
+      --red: #ef4444;
+      --orange: #f97316;
+      --cyan: #06b6d4;
     }
     html, body {
       height: 100%; background: var(--bg); color: var(--text);
@@ -26,102 +29,110 @@
 
     /* ── HEADER ── */
     header {
-      flex-shrink: 0; display: flex; align-items: center; gap: 10px;
-      padding: 12px 16px; border-bottom: 1px solid var(--border);
+      flex-shrink: 0; display: flex; align-items: center; gap: 8px;
+      padding: 10px 14px; border-bottom: 1px solid var(--border);
       background: rgba(7,9,15,0.95);
     }
-    .logo { font-size: 15px; font-weight: 700; letter-spacing: 6px; }
+    .logo { font-size: 14px; font-weight: 700; letter-spacing: 5px; }
     .logo em { color: var(--accent); font-style: normal; }
     .pill {
-      display: flex; align-items: center; gap: 6px; padding: 4px 11px;
+      display: flex; align-items: center; gap: 5px; padding: 3px 9px;
       border-radius: 99px; background: var(--surface); border: 1px solid var(--border);
-      font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+      font-size: 9px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase;
       color: var(--muted); transition: all 0.3s;
     }
     .pill.on { background: var(--gdim); border-color: rgba(34,197,94,0.3); color: var(--green); }
-    .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); transition: background 0.3s; }
+    .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--muted); transition: background 0.3s; }
     .pill.on .dot { background: var(--green); animation: blink 2s infinite; }
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
     .spacer { flex: 1; }
     .enc-badge {
-      font-size: 9px; font-weight: 700; letter-spacing: 1.5px; padding: 3px 8px;
-      border-radius: 4px; display: none;
+      font-size: 8px; font-weight: 700; letter-spacing: 1.2px; padding: 2px 6px;
+      border-radius: 3px; display: none;
     }
-    .enc-badge.on  { display: block; background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.25); color: var(--green); }
+    .enc-badge.on { display: block; background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.25); color: var(--green); }
     .enc-badge.off { display: block; background: rgba(255,100,100,0.08); border: 1px solid rgba(255,100,100,0.2); color: #f87171; }
     .mode-badge {
-      font-size: 9px; font-weight: 700; letter-spacing: 1px; padding: 3px 10px;
+      font-size: 8px; font-weight: 700; letter-spacing: 1px; padding: 2px 8px;
       border-radius: 99px; transition: all 0.3s;
     }
     .mode-badge.cloud { background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.3); color: #818cf8; }
-    .mode-badge.pc    { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.25); color: var(--green); }
+    .mode-badge.pc { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.25); color: var(--green); }
     .mode-badge.offline { background: rgba(255,100,100,0.08); border: 1px solid rgba(255,100,100,0.2); color: #f87171; }
-    .cloud-tag { display: inline-block; font-size: 8px; font-weight: 700; letter-spacing: 1px; padding: 1px 6px; border-radius: 4px; background: rgba(99,102,241,0.15); color: #818cf8; margin-left: 6px; vertical-align: middle; }
-    .url { font-size: 10px; font-family: monospace; color: var(--muted); padding: 4px 9px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; }
 
-    /* ── FEED ── */
-    main { flex: 1; overflow-y: auto; padding: 14px 16px 8px; display: flex; flex-direction: column; gap: 10px; }
-    main::-webkit-scrollbar { width: 3px; }
-    main::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-    .msg { max-width: 82%; padding: 10px 14px; border-radius: 14px; font-size: 14px; line-height: 1.55; animation: pop 0.18s ease; }
+    /* ── TABS ── */
+    .tabs {
+      flex-shrink: 0; display: flex; border-bottom: 1px solid var(--border);
+      background: rgba(7,9,15,0.95); overflow-x: auto; -webkit-overflow-scrolling: touch;
+    }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab {
+      flex: 1; min-width: 60px; padding: 10px 6px; text-align: center;
+      font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+      color: var(--muted); border-bottom: 2px solid transparent;
+      transition: all 0.2s; cursor: pointer; white-space: nowrap;
+    }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab:active { background: var(--surface); }
+    .tab-icon { font-size: 16px; display: block; margin-bottom: 2px; }
+
+    /* ── PANELS ── */
+    .panel { display: none; flex: 1; overflow: hidden; flex-direction: column; }
+    .panel.active { display: flex; }
+
+    /* ── CHAT PANEL ── */
+    #chatFeed { flex: 1; overflow-y: auto; padding: 12px 14px 8px; display: flex; flex-direction: column; gap: 8px; }
+    #chatFeed::-webkit-scrollbar { width: 2px; }
+    #chatFeed::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+    .msg { max-width: 85%; padding: 10px 14px; border-radius: 14px; font-size: 14px; line-height: 1.5; animation: pop 0.18s ease; word-wrap: break-word; }
     @keyframes pop { from { opacity:0; transform:translateY(4px); } }
-    .msg-j   { align-self:flex-start; background:var(--adim);   border:1px solid rgba(99,102,241,0.18); border-bottom-left-radius:4px; }
-    .msg-u   { align-self:flex-end;   background:var(--surface); border:1px solid var(--border);        border-bottom-right-radius:4px; }
-    .msg-sys { align-self:center; font-size:11px; color:var(--muted); padding:2px 0; background:transparent; border:none; letter-spacing:0.3px; }
-    .lbl { font-size:9px; font-weight:700; letter-spacing:2px; text-transform:uppercase; opacity:0.45; margin-bottom:4px; }
+    .msg-j { align-self:flex-start; background:var(--adim); border:1px solid rgba(99,102,241,0.18); border-bottom-left-radius:4px; }
+    .msg-u { align-self:flex-end; background:var(--surface); border:1px solid var(--border); border-bottom-right-radius:4px; }
+    .msg-sys { align-self:center; font-size:10px; color:var(--muted); padding:2px 0; background:transparent; border:none; letter-spacing:0.3px; }
+    .lbl { font-size:8px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; opacity:0.45; margin-bottom:3px; }
     .msg-j .lbl { color:var(--accent); }
     .msg-u .lbl { color:var(--muted); text-align:right; }
+    .cloud-tag { display:inline-block; font-size:7px; font-weight:700; letter-spacing:1px; padding:1px 5px; border-radius:3px; background:rgba(99,102,241,0.15); color:#818cf8; margin-left:4px; vertical-align:middle; }
 
     /* ── FILE CARD ── */
     .msg-file {
-      align-self: flex-end;
-      background: var(--surface); border: 1px solid var(--border);
+      align-self: flex-end; background: var(--surface); border: 1px solid var(--border);
       border-radius: 14px; border-bottom-right-radius: 4px;
-      padding: 11px 14px; display: flex; align-items: center; gap: 12px;
-      max-width: 82%; animation: pop 0.18s ease;
+      padding: 10px 12px; display: flex; align-items: center; gap: 10px;
+      max-width: 85%; animation: pop 0.18s ease;
     }
-    .fc-icon { font-size: 26px; flex-shrink: 0; }
+    .fc-icon { font-size: 24px; flex-shrink: 0; }
     .fc-meta { flex: 1; min-width: 0; }
-    .fc-lbl  { font-size:9px; font-weight:700; letter-spacing:2px; text-transform:uppercase; opacity:0.45; color:var(--muted); margin-bottom:4px; }
-    .fc-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .fc-size { font-size: 11px; color: var(--muted); margin-top: 2px; }
-    .fc-bar-wrap { height: 3px; background: var(--border); border-radius: 2px; margin-top: 7px; overflow: hidden; }
+    .fc-lbl { font-size:8px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; opacity:0.45; color:var(--muted); margin-bottom:3px; }
+    .fc-name { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .fc-size { font-size: 10px; color: var(--muted); margin-top: 2px; }
+    .fc-bar-wrap { height: 2px; background: var(--border); border-radius: 2px; margin-top: 5px; overflow: hidden; }
     .fc-bar { height: 100%; width: 0%; background: var(--accent); border-radius: 2px; transition: width 0.12s linear; }
-    .fc-status { font-size: 10px; font-weight: 700; letter-spacing: 1px; flex-shrink: 0; color: var(--muted); }
+    .fc-status { font-size: 9px; font-weight: 700; letter-spacing: 1px; flex-shrink: 0; color: var(--muted); }
     .fc-status.done { color: var(--green); }
-    .fc-status.err  { color: #f87171; }
-    .fc-dl { display:block; margin-top:6px; font-size:11px; color:var(--accent); text-decoration:none; font-weight:600; }
-    .fc-dl:hover { opacity: 0.8; }
+    .fc-status.err { color: #f87171; }
+    .fc-dl { display:block; margin-top:5px; font-size:10px; color:var(--accent); text-decoration:none; font-weight:600; }
 
-    /* ── FOOTER ── */
-    footer { flex-shrink:0; padding:10px 14px; border-top:1px solid var(--border); background:rgba(7,9,15,0.95); display:flex; gap:8px; align-items:center; }
-    #inp { flex:1; padding:11px 14px; background:var(--surface); border:1.5px solid var(--border); border-radius:12px; color:var(--text); font-size:14px; outline:none; transition:border-color 0.15s; }
+    /* ── CHAT FOOTER ── */
+    .chat-footer { flex-shrink:0; padding:8px 12px; border-top:1px solid var(--border); background:rgba(7,9,15,0.95); display:flex; gap:6px; align-items:center; }
+    #inp { flex:1; padding:10px 12px; background:var(--surface); border:1.5px solid var(--border); border-radius:10px; color:var(--text); font-size:14px; outline:none; transition:border-color 0.15s; }
     #inp:focus { border-color: var(--accent); }
     #inp::placeholder { color: var(--muted); }
-    .btn { padding:11px 15px; border:none; border-radius:12px; font-size:11px; font-weight:700; letter-spacing:1.5px; cursor:pointer; transition:opacity 0.15s,transform 0.1s; }
+    .btn { padding:10px 12px; border:none; border-radius:10px; font-size:10px; font-weight:700; letter-spacing:1.2px; cursor:pointer; transition:opacity 0.15s,transform 0.1s; }
     .btn:active { transform: scale(0.96); }
-    .btn:hover  { opacity: 0.82; }
     .btn-send { background: var(--accent); color: #fff; }
     .btn-wake { background:var(--surface); border:1px solid var(--border); color:var(--muted); display:none; }
     .btn-wake.show { display:block; color:var(--green); border-color:rgba(34,197,94,0.35); }
     .btn-attach {
       background: var(--surface); border: 1px solid var(--border); color: var(--muted);
-      padding: 11px 13px; font-size: 16px; line-height: 1; border-radius: 12px;
-      cursor: pointer; transition: opacity 0.15s, transform 0.1s; display: flex;
-      align-items: center; justify-content: center; flex-shrink: 0;
+      padding: 10px 11px; font-size: 14px; border-radius: 10px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
-    .btn-attach:hover  { opacity: 0.82; border-color: var(--accent); color: var(--accent); }
-    .btn-attach:active { transform: scale(0.96); }
-
-    /* ── MIC BUTTON ── */
     #mic-btn {
       background: var(--surface); border: 1px solid var(--border); color: var(--muted);
-      padding: 11px 13px; font-size: 16px; line-height: 1; border-radius: 12px;
-      cursor: pointer; transition: opacity 0.15s, transform 0.1s, background 0.2s, border-color 0.2s;
-      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      padding: 10px 11px; font-size: 14px; border-radius: 10px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
-    #mic-btn:hover  { opacity: 0.82; border-color: var(--accent); color: var(--accent); }
-    #mic-btn:active { transform: scale(0.96); }
     #mic-btn.recording {
       background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.45); color: #ef4444;
       animation: mic-pulse 1s ease-in-out infinite;
@@ -129,16 +140,145 @@
     #mic-btn.unsupported { opacity: 0.3; cursor: not-allowed; }
     @keyframes mic-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.65;transform:scale(0.97)} }
 
+    /* ── METRICS PANEL ── */
+    .metrics-panel { padding: 14px; overflow-y: auto; }
+    .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+    .metric-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      padding: 14px; text-align: center;
+    }
+    .metric-icon { font-size: 24px; margin-bottom: 6px; }
+    .metric-value { font-size: 28px; font-weight: 700; color: var(--accent); }
+    .metric-label { font-size: 9px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+    .metric-bar { height: 4px; background: var(--border); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+    .metric-bar-fill { height: 100%; border-radius: 2px; transition: width 0.5s ease, background 0.3s; }
+    .metric-detail { font-size: 10px; color: var(--muted); margin-top: 4px; }
+    .uptime-card {
+      grid-column: span 2; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 12px;
+    }
+    .uptime-icon { font-size: 20px; }
+    .uptime-info { flex: 1; }
+    .uptime-value { font-size: 16px; font-weight: 600; }
+    .uptime-label { font-size: 9px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); }
+    .refresh-btn {
+      width: 100%; padding: 12px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; color: var(--accent); font-size: 11px; font-weight: 700;
+      letter-spacing: 1.5px; cursor: pointer; margin-top: 10px;
+    }
+    .refresh-btn:active { transform: scale(0.98); background: var(--adim); }
+
+    /* ── CONTROLS PANEL ── */
+    .controls-panel { padding: 14px; overflow-y: auto; }
+    .control-section { margin-bottom: 16px; }
+    .control-section-title {
+      font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 10px; padding-left: 4px;
+    }
+    .control-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .ctrl-btn {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      padding: 14px 8px; text-align: center; cursor: pointer; transition: all 0.15s;
+    }
+    .ctrl-btn:active { transform: scale(0.95); background: var(--adim); border-color: var(--accent); }
+    .ctrl-btn.danger:active { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.45); }
+    .ctrl-icon { font-size: 22px; margin-bottom: 4px; }
+    .ctrl-label { font-size: 8px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
+    .volume-slider {
+      width: 100%; margin: 10px 0; -webkit-appearance: none; appearance: none;
+      height: 4px; background: var(--border); border-radius: 2px; outline: none;
+    }
+    .volume-slider::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%;
+      background: var(--accent); cursor: pointer;
+    }
+    .volume-display { text-align: center; font-size: 12px; color: var(--muted); }
+
+    /* ── FILES PANEL ── */
+    .files-panel { padding: 14px; overflow-y: auto; }
+    .file-list { display: flex; flex-direction: column; gap: 6px; }
+    .file-item {
+      display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    }
+    .file-item-icon { font-size: 22px; flex-shrink: 0; }
+    .file-item-info { flex: 1; min-width: 0; }
+    .file-item-name { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .file-item-size { font-size: 10px; color: var(--muted); }
+    .file-item-dl {
+      padding: 6px 10px; background: var(--accent); border: none; border-radius: 6px;
+      color: #fff; font-size: 9px; font-weight: 700; letter-spacing: 1px; cursor: pointer;
+      text-decoration: none;
+    }
+    .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); }
+    .empty-icon { font-size: 40px; margin-bottom: 10px; opacity: 0.5; }
+    .empty-text { font-size: 12px; }
+
+    /* ── CAMERA PANEL ── */
+    .camera-panel { padding: 14px; overflow-y: auto; }
+    .camera-section { margin-bottom: 16px; }
+    .camera-section-title {
+      font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 10px; padding-left: 4px;
+    }
+    .camera-btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .camera-btn {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      padding: 20px 12px; text-align: center; cursor: pointer; transition: all 0.15s;
+    }
+    .camera-btn:active { transform: scale(0.95); background: var(--adim); border-color: var(--accent); }
+    .camera-btn-icon { font-size: 32px; margin-bottom: 6px; }
+    .camera-btn-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
+    .camera-preview {
+      width: 100%; border-radius: 10px; border: 1px solid var(--border);
+      margin-top: 10px; display: none;
+    }
+    .camera-preview.active { display: block; }
+    #cameraInput { display: none; }
+
+    /* ── HUD PANEL ── */
+    .hud-panel { padding: 14px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
+    .hud-container {
+      width: 200px; height: 200px; position: relative; margin: 20px auto;
+    }
+    .hud-ring {
+      position: absolute; border-radius: 50%; border: 2px solid var(--accent);
+      animation: hud-spin 8s linear infinite;
+    }
+    .hud-ring.r1 { inset: 0; opacity: 0.3; }
+    .hud-ring.r2 { inset: 15px; opacity: 0.5; animation-direction: reverse; animation-duration: 6s; }
+    .hud-ring.r3 { inset: 30px; opacity: 0.7; animation-duration: 10s; }
+    .hud-center {
+      position: absolute; inset: 50px; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+    }
+    .hud-status { font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--green); }
+    .hud-time { font-size: 24px; font-weight: 700; color: var(--text); margin-top: 4px; }
+    @keyframes hud-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .hud-stats {
+      width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 20px;
+    }
+    .hud-stat {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+      padding: 10px; text-align: center;
+    }
+    .hud-stat-value { font-size: 18px; font-weight: 700; color: var(--accent); }
+    .hud-stat-label { font-size: 8px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-top: 2px; }
+
     /* ── TOAST ── */
     #toast {
-      position:fixed; top:66px; left:50%; transform:translateX(-50%) translateY(-8px);
+      position:fixed; top:60px; left:50%; transform:translateX(-50%) translateY(-8px);
       background:rgba(34,197,94,0.16); border:1px solid rgba(34,197,94,0.4);
-      color:var(--green); font-size:12px; font-weight:700; letter-spacing:1px;
-      padding:7px 18px; border-radius:99px;
+      color:var(--green); font-size:11px; font-weight:700; letter-spacing:1px;
+      padding:6px 16px; border-radius:99px;
       opacity:0; transition:opacity 0.22s,transform 0.22s;
-      pointer-events:none; white-space:nowrap;
+      pointer-events:none; white-space:nowrap; z-index:100;
     }
     #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width: 2px; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
   </style>
 </head>
 <body>
@@ -146,27 +286,280 @@
   <header>
     <div class="logo"><em>J</em>ARVIS</div>
     <div class="pill" id="pill"><span class="dot"></span><span id="st">Conectando</span></div>
-    <div class="mode-badge cloud" id="modeBadge">⛅ CLOUD</div>
+    <div class="mode-badge cloud" id="modeBadge">CLOUD</div>
     <div class="enc-badge" id="enc">AES-256</div>
     <div class="spacer"></div>
-    <div class="url" id="hostUrl">__IP__:__PORT__</div>
   </header>
-  <main id="feed"></main>
-  <footer>
-    <input id="inp" placeholder="Envie um comando para o JARVIS…" autocomplete="off">
-    <label class="btn-attach" for="file-inp" title="Enviar arquivo">📎</label>
-    <input type="file" id="file-inp" multiple accept="*/*" style="display:none">
-    <button id="mic-btn" onclick="doMic()" title="Comando de voz">🎤</button>
-    <button class="btn btn-wake" id="wake" onclick="doWake()">ACORDAR</button>
-    <button class="btn btn-send" onclick="doSend()">ENVIAR</button>
-  </footer>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <div class="tab active" data-tab="chat"><span class="tab-icon">💬</span>Chat</div>
+    <div class="tab" data-tab="metrics"><span class="tab-icon">📊</span>Sistema</div>
+    <div class="tab" data-tab="controls"><span class="tab-icon">🎮</span>Controle</div>
+    <div class="tab" data-tab="files"><span class="tab-icon">📁</span>Arquivos</div>
+    <div class="tab" data-tab="camera"><span class="tab-icon">📷</span>Câmera</div>
+    <div class="tab" data-tab="hud"><span class="tab-icon">🎯</span>HUD</div>
+  </div>
+
+  <!-- CHAT PANEL -->
+  <div class="panel active" id="panel-chat">
+    <div id="chatFeed"></div>
+    <div class="chat-footer">
+      <input id="inp" placeholder="Comando para JARVIS..." autocomplete="off">
+      <label class="btn-attach" for="file-inp" title="Enviar arquivo">📎</label>
+      <input type="file" id="file-inp" multiple accept="*/*" style="display:none">
+      <button id="mic-btn" onclick="doMic()" title="Comando de voz">🎤</button>
+      <button class="btn btn-wake" id="wake" onclick="doWake()">ACORDAR</button>
+      <button class="btn btn-send" onclick="doSend()">▶</button>
+    </div>
+  </div>
+
+  <!-- METRICS PANEL -->
+  <div class="panel" id="panel-metrics">
+    <div class="metrics-panel">
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-icon">🖥️</div>
+          <div class="metric-value" id="cpuVal">--</div>
+          <div class="metric-label">CPU</div>
+          <div class="metric-bar"><div class="metric-bar-fill" id="cpuBar" style="width:0%;background:var(--accent)"></div></div>
+          <div class="metric-detail" id="cpuTemp">--</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon">🧠</div>
+          <div class="metric-value" id="ramVal">--</div>
+          <div class="metric-label">RAM</div>
+          <div class="metric-bar"><div class="metric-bar-fill" id="ramBar" style="width:0%;background:var(--green)"></div></div>
+          <div class="metric-detail" id="ramDetail">--</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon">🎮</div>
+          <div class="metric-value" id="gpuVal">--</div>
+          <div class="metric-label">GPU</div>
+          <div class="metric-bar"><div class="metric-bar-fill" id="gpuBar" style="width:0%;background:var(--orange)"></div></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon">⚡</div>
+          <div class="metric-value" id="procVal">--</div>
+          <div class="metric-label">Processos</div>
+        </div>
+        <div class="uptime-card">
+          <div class="uptime-icon">⏱️</div>
+          <div class="uptime-info">
+            <div class="uptime-label">Uptime</div>
+            <div class="uptime-value" id="uptimeVal">--</div>
+          </div>
+        </div>
+      </div>
+      <button class="refresh-btn" onclick="refreshMetrics()">🔄 ATUALIZAR MÉTRICAS</button>
+      <button class="refresh-btn" onclick="startAutoRefresh()" id="autoRefreshBtn">▶ AUTO-UPDATE (5s)</button>
+    </div>
+  </div>
+
+  <!-- CONTROLS PANEL -->
+  <div class="panel" id="panel-controls">
+    <div class="controls-panel">
+      <div class="control-section">
+        <div class="control-section-title">🔊 Áudio</div>
+        <div class="control-grid">
+          <div class="ctrl-btn" onclick="doControl('volume_down')">
+            <div class="ctrl-icon">🔉</div>
+            <div class="ctrl-label">- Volume</div>
+          </div>
+          <div class="ctrl-btn" onclick="doControl('mute')">
+            <div class="ctrl-icon">🔇</div>
+            <div class="ctrl-label">Mudo</div>
+          </div>
+          <div class="ctrl-btn" onclick="doControl('volume_up')">
+            <div class="ctrl-icon">🔊</div>
+            <div class="ctrl-label">+ Volume</div>
+          </div>
+        </div>
+        <input type="range" class="volume-slider" id="volSlider" min="0" max="100" value="50" onchange="setVolume(this.value)">
+        <div class="volume-display" id="volDisplay">50%</div>
+      </div>
+
+      <div class="control-section">
+        <div class="control-section-title">🖥️ Tela</div>
+        <div class="control-grid">
+          <div class="ctrl-btn" onclick="doControl('brightness_down')">
+            <div class="ctrl-icon">🔅</div>
+            <div class="ctrl-label">Brilho -</div>
+          </div>
+          <div class="ctrl-btn" onclick="doControl('screenshot')">
+            <div class="ctrl-icon">📸</div>
+            <div class="ctrl-label">Screenshot</div>
+          </div>
+          <div class="ctrl-btn" onclick="doControl('brightness_up')">
+            <div class="ctrl-icon">🔆</div>
+            <div class="ctrl-label">Brilho +</div>
+          </div>
+          <div class="ctrl-btn" onclick="doControl('fullscreen')">
+            <div class="ctrl-icon">⛶</div>
+            <div class="ctrl-label">Tela Cheia</div>
+          </div>
+          <div class="ctrl-btn" onclick="doControl('dark_mode')">
+            <div class="ctrl-icon">🌙</div>
+            <div class="ctrl-label">Dark Mode</div>
+          </div>
+          <div class="ctrl-btn" onclick="doControl('sleep')">
+            <div class="ctrl-icon">💤</div>
+            <div class="ctrl-label">Sleep</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="control-section">
+        <div class="control-section-title">🧭 Navegação</div>
+        <div class="control-grid">
+          <div class="ctrl-btn" onclick="doControl('prev_tab')">
+            <div class="ctrl-icon">⬅️</div>
+            <div class="ctrl-label">Tab Anterior</div>
+          </div>
+          <div class="ctrl-btn" onclick="doControl('new_tab')">
+            <div class="ctrl-icon">➕</div>
+            <div class="ctrl-label">Nova Tab</div>
+          </div>
+          <div class="ctrl-btn" onclick="doControl('next_tab')">
+            <div class="ctrl-icon">➡️</div>
+            <div class="ctrl-label">Próx Tab</div>
+          </div>
+          <div class="ctrl-btn" onclick="doControl('close_tab')">
+            <div class="ctrl-icon">❌</div>
+            <div class="ctrl-label">Fechar Tab</div>
+          </div>
+          <div class="ctrl-btn" onclick="doControl('refresh')">
+            <div class="ctrl-icon">🔄</div>
+            <div class="ctrl-label">Recarregar</div>
+          </div>
+          <div class="ctrl-btn" onclick="doControl('show_desktop')">
+            <div class="ctrl-icon">🏠</div>
+            <div class="ctrl-label">Desktop</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="control-section">
+        <div class="control-section-title">⚙️ Sistema</div>
+        <div class="control-grid">
+          <div class="ctrl-btn" onclick="doControl('wifi')">
+            <div class="ctrl-icon">📶</div>
+            <div class="ctrl-label">WiFi</div>
+          </div>
+          <div class="ctrl-btn" onclick="doControl('lock')">
+            <div class="ctrl-icon">🔒</div>
+            <div class="ctrl-label">Bloquear</div>
+          </div>
+          <div class="ctrl-btn" onclick="doControl('task_manager')">
+            <div class="ctrl-icon">📋</div>
+            <div class="ctrl-label">Task Manager</div>
+          </div>
+          <div class="ctrl-btn" onclick="doControl('minimize')">
+            <div class="ctrl-icon">➖</div>
+            <div class="ctrl-label">Minimizar</div>
+          </div>
+          <div class="ctrl-btn danger" onclick="doControl('restart')">
+            <div class="ctrl-icon">🔄</div>
+            <div class="ctrl-label">Reiniciar</div>
+          </div>
+          <div class="ctrl-btn danger" onclick="doControl('shutdown')">
+            <div class="ctrl-icon">⏻</div>
+            <div class="ctrl-label">Desligar</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FILES PANEL -->
+  <div class="panel" id="panel-files">
+    <div class="files-panel">
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <button class="refresh-btn" style="flex:1;margin:0;" onclick="refreshFiles()">🔄 ATUALIZAR</button>
+        <label class="refresh-btn" style="flex:1;margin:0;text-align:center;cursor:pointer;">
+          📤 ENVIAR ARQUIVO
+          <input type="file" id="fileUploadInput" multiple style="display:none" onchange="uploadFiles(this.files)">
+        </label>
+      </div>
+      <div class="file-list" id="fileList">
+        <div class="empty-state">
+          <div class="empty-icon">📁</div>
+          <div class="empty-text">Carregando arquivos...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CAMERA PANEL -->
+  <div class="panel" id="panel-camera">
+    <div class="camera-panel">
+      <div class="camera-section">
+        <div class="camera-section-title">📷 Câmera do Celular</div>
+        <div class="camera-btn-grid">
+          <div class="camera-btn" onclick="capturePhoto('environment')">
+            <div class="camera-btn-icon">📷</div>
+            <div class="camera-btn-label">Câmera Traseira</div>
+          </div>
+          <div class="camera-btn" onclick="capturePhoto('user')">
+            <div class="camera-btn-icon">🤳</div>
+            <div class="camera-btn-label">Câmera Frontal</div>
+          </div>
+        </div>
+        <img class="camera-preview" id="cameraPreview" alt="Preview">
+        <input type="file" id="cameraInput" accept="image/*" capture="environment">
+      </div>
+      <div class="camera-section">
+        <div class="camera-section-title">🖥️ Tela do PC</div>
+        <div class="camera-btn-grid">
+          <div class="camera-btn" onclick="getScreen()">
+            <div class="camera-btn-icon">🖥️</div>
+            <div class="camera-btn-label">Ver Tela do PC</div>
+          </div>
+          <div class="camera-btn" onclick="analyzeScreen()">
+            <div class="camera-btn-icon">🔍</div>
+            <div class="camera-btn-label">Analisar Tela</div>
+          </div>
+        </div>
+        <img class="camera-preview" id="screenPreview" alt="Screen">
+      </div>
+    </div>
+  </div>
+
+  <!-- HUD PANEL -->
+  <div class="panel" id="panel-hud">
+    <div class="hud-panel">
+      <div class="hud-container">
+        <div class="hud-ring r1"></div>
+        <div class="hud-ring r2"></div>
+        <div class="hud-ring r3"></div>
+        <div class="hud-center">
+          <div class="hud-status" id="hudStatus">ATIVO</div>
+          <div class="hud-time" id="hudTime">--:--</div>
+        </div>
+      </div>
+      <div class="hud-stats">
+        <div class="hud-stat">
+          <div class="hud-stat-value" id="hudCpu">--</div>
+          <div class="hud-stat-label">CPU</div>
+        </div>
+        <div class="hud-stat">
+          <div class="hud-stat-value" id="hudRam">--</div>
+          <div class="hud-stat-label">RAM</div>
+        </div>
+        <div class="hud-stat">
+          <div class="hud-stat-value" id="hudGpu">--</div>
+          <div class="hud-stat-label">GPU</div>
+        </div>
+        <div class="hud-stat">
+          <div class="hud-stat-value" id="hudTemp">--</div>
+          <div class="hud-stat-label">TEMP</div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script>
-    const _authToken  = "open_access";
-
-    // Update host display dynamically
-    const _hostEl = document.getElementById('hostUrl');
-    if (_hostEl) _hostEl.textContent = location.host;
+    const _authToken = sessionStorage.getItem('jarvis_token') || 'open_access';
 
     function _authHeader() { return { 'Authorization': `Bearer ${_authToken}` }; }
     function _authFetch(url, opts = {}) {
@@ -174,33 +567,49 @@
       return fetch(url, opts);
     }
 
-    // ── Criptografia desativada (Acesso Aberto) ─────────────────────────────
+    // ── Encryption badge ──
     const encBadge = document.getElementById('enc');
     if (encBadge) {
       encBadge.className = 'enc-badge off';
       encBadge.textContent = 'OPEN ACCESS';
     }
 
-    // ── WebSocket ─────────────────────────────────────────────────────────────
-    const feed  = document.getElementById('feed');
-    const pill  = document.getElementById('pill');
+    // ── Tab Navigation ──
+    const tabs = document.querySelectorAll('.tab');
+    const panels = document.querySelectorAll('.panel');
+    let autoRefreshInterval = null;
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        panels.forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+        
+        if (tab.dataset.tab === 'metrics') refreshMetrics();
+        if (tab.dataset.tab === 'files') refreshFiles();
+        if (tab.dataset.tab === 'hud') updateHudTime();
+      });
+    });
+
+    // ── WebSocket ──
+    const feed = document.getElementById('chatFeed');
+    const pill = document.getElementById('pill');
     const stTxt = document.getElementById('st');
-    const wake  = document.getElementById('wake');
+    const wake = document.getElementById('wake');
 
     const _wsProto = location.protocol === 'https:' ? 'wss' : 'ws';
-    const _wsUrl   = `${_wsProto}://${location.host}/ws?token=${encodeURIComponent(_authToken)}`;
-    const ws       = new WebSocket(_wsUrl);
+    const _wsUrl = `${_wsProto}://${location.host}/ws?token=${encodeURIComponent(_authToken)}`;
+    const ws = new WebSocket(_wsUrl);
 
-    ws.onopen    = () => { sys('Sessão remota ativa.'); toast('Conectado ao JARVIS'); };
-    ws.onclose   = () => sys('Conexão perdida — atualize para reconectar.');
-    ws.onerror   = () => sys('Erro de conexão.');
+    ws.onopen = () => { sys('Sessão remota ativa.'); toast('Conectado ao JARVIS'); };
+    ws.onclose = () => sys('Conexão perdida — atualize para reconectar.');
+    ws.onerror = () => sys('Erro de conexão.');
     ws.onmessage = (e) => {
       const m = JSON.parse(e.data);
       if (m.type === 'log') {
         append(m.speaker, m.text, m.cloud);
-        // Speak JARVIS response aloud
         if (m.speaker === 'jarvis' && window.speechSynthesis) {
-          // Cancel previous speech if any
           speechSynthesis.cancel();
           const u = new SpeechSynthesisUtterance(m.text);
           u.lang = 'pt-BR';
@@ -208,34 +617,36 @@
           speechSynthesis.speak(u);
         }
       }
-      if (m.type === 'status')        setStatus(m.state);
-      if (m.type === 'mode')          setMode(m.mode, m.label);
-      if (m.type === 'wake')          sys('Palavra de acionamento detectada — conectando…');
-      if (m.type === 'sys')           sys(m.text);
+      if (m.type === 'status') setStatus(m.state);
+      if (m.type === 'mode') setMode(m.mode, m.label);
+      if (m.type === 'wake') sys('Palavra de acionamento detectada — conectando…');
+      if (m.type === 'sys') sys(m.text);
       if (m.type === 'file_received') _onFileReceived(m);
+      if (m.type === 'metrics') updateMetricsFromWS(m);
+      if (m.type === 'tool_start') sys(`🔧 ${m.tool}...`);
+      if (m.type === 'tool_done') sys(`✅ ${m.tool} concluído`);
     };
 
     const modeBadge = document.getElementById('modeBadge');
-
     function setMode(mode, label) {
-      if (mode === 'pc') {
-        modeBadge.className = 'mode-badge pc'; modeBadge.textContent = '🖥️ PC';
-      } else if (mode === 'cloud') {
-        modeBadge.className = 'mode-badge cloud'; modeBadge.textContent = '⛅ CLOUD';
-      } else {
-        modeBadge.className = 'mode-badge offline'; modeBadge.textContent = '💤 OFFLINE';
-      }
+      if (mode === 'pc') { modeBadge.className = 'mode-badge pc'; modeBadge.textContent = '🖥️ PC'; }
+      else if (mode === 'cloud') { modeBadge.className = 'mode-badge cloud'; modeBadge.textContent = '☁️ CLOUD'; }
+      else { modeBadge.className = 'mode-badge offline'; modeBadge.textContent = '💤 OFFLINE'; }
     }
 
     function setStatus(s) {
       if (s === 'active') {
         pill.className = 'pill on'; stTxt.textContent = 'Ativo'; wake.classList.remove('show');
+        document.getElementById('hudStatus').textContent = 'ATIVO';
       } else if (s === 'cloud_idle') {
         pill.className = 'pill on'; stTxt.textContent = 'Cloud'; wake.classList.remove('show');
+        document.getElementById('hudStatus').textContent = 'CLOUD';
       } else if (s === 'thinking') {
         pill.className = 'pill on'; stTxt.textContent = 'Pensando…'; wake.classList.remove('show');
+        document.getElementById('hudStatus').textContent = 'PENSANDO';
       } else {
         pill.className = 'pill'; stTxt.textContent = 'Em espera'; wake.classList.add('show');
+        document.getElementById('hudStatus').textContent = 'EM ESPERA';
       }
     }
 
@@ -259,37 +670,34 @@
       feed.appendChild(d); feed.scrollTop = feed.scrollHeight;
     }
 
-    function esc(s) {
-      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    }
+    function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-    // ── File helpers ──────────────────────────────────────────────────────────
+    // ── File helpers ──
     function _fileIcon(name) {
       const ext = (name.split('.').pop() || '').toLowerCase();
-      if (['jpg','jpeg','png','gif','webp','heic','heif','avif','bmp','svg'].includes(ext)) return '🖼️';
-      if (['mp4','mov','avi','mkv','webm','m4v','3gp'].includes(ext))                       return '🎬';
-      if (['mp3','m4a','wav','flac','aac','ogg','opus'].includes(ext))                      return '🎵';
-      if (['pdf'].includes(ext))                                                             return '📋';
-      if (['doc','docx','txt','md','rtf','odt'].includes(ext))                              return '📝';
-      if (['xls','xlsx','csv','ods'].includes(ext))                                         return '📊';
-      if (['ppt','pptx','odp'].includes(ext))                                               return '📑';
-      if (['zip','rar','7z','tar','gz','bz2','xz'].includes(ext))                          return '📦';
-      if (['apk','exe','dmg','deb','rpm','msi'].includes(ext))                              return '⚙️';
+      if (['jpg','jpeg','png','gif','webp','heic','bmp','svg'].includes(ext)) return '🖼️';
+      if (['mp4','mov','avi','mkv','webm'].includes(ext)) return '🎬';
+      if (['mp3','m4a','wav','flac','aac','ogg'].includes(ext)) return '🎵';
+      if (['pdf'].includes(ext)) return '📋';
+      if (['doc','docx','txt','md','rtf'].includes(ext)) return '📝';
+      if (['xls','xlsx','csv','ods'].includes(ext)) return '📊';
+      if (['ppt','pptx','odp'].includes(ext)) return '📑';
+      if (['zip','rar','7z','tar','gz'].includes(ext)) return '📦';
+      if (['apk','exe','dmg','deb','msi'].includes(ext)) return '⚙️';
+      if (['py','js','ts','html','css','java','cpp','c','rs','go'].includes(ext)) return '💻';
       return '📎';
     }
 
     function _fmtSize(bytes) {
-      if (bytes < 1024)             return bytes + ' B';
-      if (bytes < 1024 * 1024)     return (bytes / 1024).toFixed(1) + ' KB';
-      if (bytes < 1024 ** 3)       return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      if (bytes < 1024 ** 3) return (bytes / 1024 / 1024).toFixed(1) + ' MB';
       return (bytes / 1024 ** 3).toFixed(2) + ' GB';
     }
 
-    // ── File upload (phone → computer) ────────────────────────────────────────
+    // ── File upload (phone → computer) ──
     function _uploadFile(file) {
       const id = 'fc_' + Date.now() + '_' + Math.random().toString(36).slice(2);
-
-      // Create file card in feed
       const card = document.createElement('div');
       card.className = 'msg-file';
       card.id = id;
@@ -309,56 +717,39 @@
       const xhr = new XMLHttpRequest();
       xhr.open('POST', '/api/upload');
       xhr.setRequestHeader('Authorization', `Bearer ${_authToken}`);
-
       xhr.upload.onprogress = (e) => {
         if (!e.lengthComputable) return;
         const pct = Math.round(e.loaded / e.total * 100);
         const bar = document.getElementById(`${id}_bar`);
-        const st  = document.getElementById(`${id}_st`);
+        const st = document.getElementById(`${id}_st`);
         if (bar) bar.style.width = pct + '%';
-        if (st)  st.textContent  = pct + '%';
+        if (st) st.textContent = pct + '%';
       };
-
       xhr.onload = () => {
-        const bar  = document.getElementById(`${id}_bar`);
-        const st   = document.getElementById(`${id}_st`);
-        const meta = card.querySelector('.fc-meta');
-        const lbl  = card.querySelector('.fc-lbl');
+        const bar = document.getElementById(`${id}_bar`);
+        const st = document.getElementById(`${id}_st`);
+        const lbl = card.querySelector('.fc-lbl');
         if (xhr.status === 200) {
           let savedName = file.name;
           try { savedName = JSON.parse(xhr.responseText).name || file.name; } catch {}
           const dlUrl = `/uploads/${encodeURIComponent(savedName)}?token=${encodeURIComponent(_authToken)}`;
-          if (bar)  { bar.style.width = '100%'; bar.style.background = 'var(--green)'; }
-          if (st)   { st.textContent = '✓'; st.className = 'fc-status done'; }
-          if (lbl)  lbl.textContent = 'Enviado';
-          if (meta) meta.insertAdjacentHTML('beforeend',
-            `<a class="fc-dl" href="${dlUrl}" download="${esc(savedName)}">⬇ Baixar novamente</a>`);
+          if (bar) { bar.style.width = '100%'; bar.style.background = 'var(--green)'; }
+          if (st) { st.textContent = '✓'; st.className = 'fc-status done'; }
+          if (lbl) lbl.textContent = 'Enviado';
           toast('Arquivo enviado!');
         } else {
-          let errMsg = 'Falha no envio';
-          try { errMsg = JSON.parse(xhr.responseText).error || errMsg; } catch {}
           if (bar) bar.style.background = '#f87171';
-          if (st)  { st.textContent = 'ERR'; st.className = 'fc-status err'; }
-          if (lbl) lbl.textContent = errMsg;
+          if (st) { st.textContent = 'ERR'; st.className = 'fc-status err'; }
         }
       };
-
-      xhr.onerror = () => {
-        const st  = document.getElementById(`${id}_st`);
-        const lbl = card.querySelector('.fc-lbl');
-        if (st)  { st.textContent = 'ERR'; st.className = 'fc-status err'; }
-        if (lbl) lbl.textContent = 'Erro de conexão';
-      };
-
       const fd = new FormData();
       fd.append('file', file);
       xhr.send(fd);
     }
 
-    // File received by another WebSocket client (e.g., second open tab)
     function _onFileReceived(m) {
       const dlUrl = `/uploads/${encodeURIComponent(m.name)}?token=${encodeURIComponent(_authToken)}`;
-      const card  = document.createElement('div');
+      const card = document.createElement('div');
       card.className = 'msg-file';
       card.innerHTML = `
         <div class="fc-icon">${_fileIcon(m.name)}</div>
@@ -372,27 +763,25 @@
       `;
       feed.appendChild(card);
       feed.scrollTop = feed.scrollHeight;
-      toast('Arquivo recebido no computador!');
+      toast('Arquivo recebido no PC!');
     }
 
-    // File input change handler
     document.getElementById('file-inp').addEventListener('change', function () {
       Array.from(this.files).forEach(_uploadFile);
-      this.value = ''; // reset so the same file can be re-sent
+      this.value = '';
     });
 
-    // ── Commands ──────────────────────────────────────────────────────────────
+    // ── Commands ──
     function doSend() {
       const inp = document.getElementById('inp');
       const txt = inp.value.trim();
       if (!txt) return;
       inp.value = '';
       append('user', txt);
-      const body = { text: txt };
       _authFetch('/api/command', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
+        body: JSON.stringify({ text: txt })
       });
     }
 
@@ -405,7 +794,7 @@
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); doSend(); }
     });
 
-    // ── Toast ─────────────────────────────────────────────────────────────────
+    // ── Toast ──
     let _toastTimer;
     function toast(msg) {
       const t = document.getElementById('toast');
@@ -414,7 +803,7 @@
       _toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
     }
 
-    // ── Voice Assistant (Web Speech API) ─────────────────────────────────────
+    // ── Voice Assistant ──
     const micBtn = document.getElementById('mic-btn');
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     let recognition = null;
@@ -425,62 +814,213 @@
       recognition.lang = 'pt-BR';
       recognition.interimResults = false;
       recognition.continuous = false;
-
       recognition.onstart = () => {
         isListening = true;
         micBtn.innerHTML = '⏹';
-        micBtn.title = 'Toque para parar';
         micBtn.classList.add('recording');
         sys('Ouvindo...');
         toast('🎤 Ouvindo');
       };
-
       recognition.onresult = (e) => {
         const text = e.results[0][0].transcript;
-        if (text) {
-          const inp = document.getElementById('inp');
-          inp.value = text;
-          doSend();
-        }
+        if (text) { document.getElementById('inp').value = text; doSend(); }
       };
-
       recognition.onerror = (e) => {
-        if (e.error === 'not-allowed') {
-          sys('Microfone negado — permita no navegador.');
-        } else {
-          sys('Erro no microfone: ' + e.error);
-        }
+        if (e.error === 'not-allowed') sys('Microfone negado.');
+        else sys('Erro: ' + e.error);
         _micIdle();
       };
-
-      recognition.onend = () => {
-        _micIdle();
-      };
+      recognition.onend = () => _micIdle();
     } else {
       micBtn.classList.add('unsupported');
-      micBtn.title = 'Reconhecimento de voz não suportado neste navegador';
     }
 
     function _micIdle() {
       isListening = false;
       micBtn.innerHTML = '🎤';
-      micBtn.title = 'Comando de voz';
       micBtn.classList.remove('recording');
     }
 
     function doMic() {
-      if (!recognition) {
-        toast('Reconhecimento de voz não suportado neste navegador.');
-        return;
-      }
-      if (isListening) {
-        recognition.stop();
+      if (!recognition) { toast('Voz não suportada neste navegador.'); return; }
+      if (isListening) recognition.stop();
+      else { if (window.speechSynthesis) speechSynthesis.resume(); recognition.start(); }
+    }
+
+    // ── Metrics ──
+    let _autoRefresh = false;
+    async function refreshMetrics() {
+      try {
+        const r = await _authFetch('/api/metrics');
+        const d = await r.json();
+        if (d.error) { toast('Erro: ' + d.error); return; }
+        updateMetricsUI(d);
+      } catch (e) { toast('Erro ao buscar métricas'); }
+    }
+
+    function updateMetricsUI(d) {
+      document.getElementById('cpuVal').textContent = d.cpu_percent + '%';
+      document.getElementById('cpuBar').style.width = d.cpu_percent + '%';
+      document.getElementById('cpuBar').style.background = d.cpu_percent > 80 ? 'var(--red)' : d.cpu_percent > 60 ? 'var(--orange)' : 'var(--accent)';
+      document.getElementById('cpuTemp').textContent = d.cpu_temp_c ? d.cpu_temp_c + '°C' : 'N/A';
+
+      document.getElementById('ramVal').textContent = d.ram_percent + '%';
+      document.getElementById('ramBar').style.width = d.ram_percent + '%';
+      document.getElementById('ramBar').style.background = d.ram_percent > 80 ? 'var(--red)' : 'var(--green)';
+      document.getElementById('ramDetail').textContent = d.ram_used_gb + ' / ' + d.ram_total_gb + ' GB';
+
+      document.getElementById('gpuVal').textContent = d.gpu_percent != null ? d.gpu_percent + '%' : 'N/A';
+      document.getElementById('gpuBar').style.width = (d.gpu_percent || 0) + '%';
+      document.getElementById('gpuBar').style.background = (d.gpu_percent || 0) > 80 ? 'var(--red)' : 'var(--orange)';
+
+      document.getElementById('procVal').textContent = d.process_count;
+      document.getElementById('uptimeVal').textContent = d.uptime;
+
+      // Update HUD
+      document.getElementById('hudCpu').textContent = d.cpu_percent + '%';
+      document.getElementById('hudRam').textContent = d.ram_percent + '%';
+      document.getElementById('hudGpu').textContent = d.gpu_percent != null ? d.gpu_percent + '%' : '--';
+      document.getElementById('hudTemp').textContent = d.cpu_temp_c ? d.cpu_temp_c + '°C' : '--';
+    }
+
+    function updateMetricsFromWS(m) {
+      if (m.cpu_percent !== undefined) updateMetricsUI(m);
+    }
+
+    function startAutoRefresh() {
+      const btn = document.getElementById('autoRefreshBtn');
+      if (_autoRefresh) {
+        clearInterval(autoRefreshInterval);
+        _autoRefresh = false;
+        btn.textContent = '▶ AUTO-UPDATE (5s)';
       } else {
-        // Resume AudioContext for TTS on some mobile browsers
-        if (window.speechSynthesis) speechSynthesis.resume();
-        recognition.start();
+        refreshMetrics();
+        autoRefreshInterval = setInterval(refreshMetrics, 5000);
+        _autoRefresh = true;
+        btn.textContent = '⏹ PARAR AUTO-UPDATE';
       }
     }
+
+    // ── Remote Control ──
+    async function doControl(action, value) {
+      try {
+        const body = { action: action };
+        if (value !== undefined) body.value = value;
+        await _authFetch('/api/control', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        toast('✓ ' + action.replace('_', ' '));
+      } catch (e) { toast('Erro ao executar comando'); }
+    }
+
+    function setVolume(val) {
+      document.getElementById('volDisplay').textContent = val + '%';
+      doControl('volume_set', val);
+    }
+
+    // ── Files ──
+    async function refreshFiles() {
+      try {
+        const r = await _authFetch('/api/files');
+        const d = await r.json();
+        const list = document.getElementById('fileList');
+        if (!d.files || d.files.length === 0) {
+          list.innerHTML = '<div class="empty-state"><div class="empty-icon">📁</div><div class="empty-text">Nenhum arquivo enviado</div></div>';
+          return;
+        }
+        list.innerHTML = d.files.map(f => `
+          <div class="file-item">
+            <div class="file-item-icon">${_fileIcon(f.name)}</div>
+            <div class="file-item-info">
+              <div class="file-item-name">${esc(f.name)}</div>
+              <div class="file-item-size">${_fmtSize(f.size)}</div>
+            </div>
+            <a class="file-item-dl" href="/uploads/${encodeURIComponent(f.name)}?token=${encodeURIComponent(_authToken)}" download="${esc(f.name)}">⬇</a>
+          </div>
+        `).join('');
+      } catch (e) { toast('Erro ao carregar arquivos'); }
+    }
+
+    function uploadFiles(files) {
+      Array.from(files).forEach(f => {
+        _uploadFile(f);
+        toast('Enviando ' + f.name + '...');
+      });
+    }
+
+    // ── Camera ──
+    function capturePhoto(facingMode) {
+      const input = document.getElementById('cameraInput');
+      input.setAttribute('capture', facingMode === 'user' ? 'user' : 'environment');
+      input.click();
+    }
+
+    document.getElementById('cameraInput').addEventListener('change', async function() {
+      const file = this.files[0];
+      if (!file) return;
+      
+      const preview = document.getElementById('cameraPreview');
+      preview.src = URL.createObjectURL(file);
+      preview.classList.add('active');
+      
+      try {
+        const fd = new FormData();
+        fd.append('file', file);
+        const r = await fetch('/api/camera', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${_authToken}` },
+          body: fd
+        });
+        const d = await r.json();
+        if (d.ok) toast('📷 Imagem enviada para análise!');
+        else toast('Erro: ' + (d.error || 'Desconhecido'));
+      } catch (e) { toast('Erro ao enviar imagem'); }
+      this.value = '';
+    });
+
+    async function getScreen() {
+      try {
+        const r = await _authFetch('/api/screen');
+        const d = await r.json();
+        if (d.ok) {
+          const preview = document.getElementById('screenPreview');
+          preview.src = d.image;
+          preview.classList.add('active');
+          toast('🖥️ Tela capturada!');
+        } else toast('Erro: ' + (d.error || 'Desconhecido'));
+      } catch (e) { toast('Erro ao capturar tela'); }
+    }
+
+    async function analyzeScreen() {
+      try {
+        const r = await _authFetch('/api/screen');
+        const d = await r.json();
+        if (d.ok) {
+          const preview = document.getElementById('screenPreview');
+          preview.src = d.image;
+          preview.classList.add('active');
+          append('user', 'Analise o que está na tela do meu computador');
+          _authFetch('/api/command', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: '[SCREEN_ANALYSIS] Analise esta tela: ' + d.image })
+          });
+          toast('🔍 Enviando para análise...');
+        }
+      } catch (e) { toast('Erro ao analisar tela'); }
+    }
+
+    // ── HUD Time ──
+    function updateHudTime() {
+      const now = new Date();
+      const h = String(now.getHours()).padStart(2, '0');
+      const m = String(now.getMinutes()).padStart(2, '0');
+      document.getElementById('hudTime').textContent = h + ':' + m;
+    }
+    setInterval(updateHudTime, 1000);
+    updateHudTime();
   </script>
 </body>
 </html>

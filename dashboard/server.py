@@ -604,6 +604,127 @@ class DashboardServer:
                 self._wake_callback()
             return JSONResponse({"ok": True})
 
+        # ── System Metrics ──────────────────────────────────────────────────
+
+        @app.get("/api/metrics")
+        async def get_metrics(req: Request):
+            if not _auth(req):
+                return JSONResponse({"error": "Não autorizado"}, status_code=401)
+            try:
+                from actions.system_monitor import get_system_status
+                metrics = get_system_status()
+                return JSONResponse(metrics)
+            except Exception as e:
+                return JSONResponse({"error": str(e)}, status_code=500)
+
+        # ── Remote Control ──────────────────────────────────────────────────
+
+        @app.post("/api/control")
+        async def remote_control(req: Request):
+            if not _auth(req):
+                return JSONResponse({"error": "Não autorizado"}, status_code=401)
+            body = await req.json()
+            action = body.get("action", "")
+            value = body.get("value", "")
+            
+            control_map = {
+                "volume_up": "volume_up",
+                "volume_down": "volume_down",
+                "volume_set": f"volume_set {value}" if value else "volume_up",
+                "mute": "toggle_mute",
+                "brightness_up": "brightness_up",
+                "brightness_down": "brightness_down",
+                "dark_mode": "dark_mode",
+                "wifi": "toggle_wifi",
+                "lock": "lock_screen",
+                "screenshot": "screenshot",
+                "fullscreen": "full_screen",
+                "minimize": "minimize",
+                "show_desktop": "show_desktop",
+                "task_manager": "task_manager",
+                "restart": "restart",
+                "shutdown": "shutdown",
+                "sleep": "sleep_display",
+                "next_tab": "next_tab",
+                "prev_tab": "prev_tab",
+                "close_tab": "close_tab",
+                "new_tab": "new_tab",
+                "refresh": "refresh_page",
+                "scroll_up": "scroll_up",
+                "scroll_down": "scroll_down",
+            }
+            
+            if action in control_map:
+                await self._command_queue.put(f"[SYSTEM_ACTION] {control_map[action]}")
+                if self._wake_callback:
+                    self._wake_callback()
+                return JSONResponse({"ok": True, "action": action})
+            elif action == "type_text":
+                text = body.get("text", "")
+                if text:
+                    await self._command_queue.put(f"[SYSTEM_ACTION] type_text {text}")
+                    return JSONResponse({"ok": True})
+            elif action == "open_app":
+                app_name = body.get("app_name", "")
+                if app_name:
+                    await self._command_queue.put(f"[SYSTEM_ACTION] open_app {app_name}")
+                    return JSONResponse({"ok": True})
+            
+            return JSONResponse({"error": f"Ação desconhecida: {action}"}, status_code=400)
+
+        # ── Phone Camera → Gemini Vision ────────────────────────────────────
+
+        @app.post("/api/camera")
+        async def phone_camera(req: Request, file: UploadFile = FastAPIFile(...)):
+            if not _auth(req):
+                return JSONResponse({"error": "Não autorizado"}, status_code=401)
+            
+            import base64
+            try:
+                content = await file.read()
+                b64_image = base64.b64encode(content).decode('utf-8')
+                
+                await self._command_queue.put(
+                    f"[PHONE_CAMERA] data:image/{file.content_type.split('/')[-1]};base64,{b64_image}"
+                )
+                if self._wake_callback:
+                    self._wake_callback()
+                
+                return JSONResponse({"ok": True, "message": "Imagem enviada para análise"})
+            except Exception as e:
+                return JSONResponse({"error": str(e)}, status_code=500)
+
+        # ── Screen Capture → Phone ──────────────────────────────────────────
+
+        @app.get("/api/screen")
+        async def get_screen(req: Request):
+            if not _auth(req):
+                return JSONResponse({"error": "Não autorizado"}, status_code=401)
+            
+            try:
+                import base64
+                import io
+                from PIL import Image
+                import mss
+                
+                with mss.mss() as sct:
+                    monitor = sct.monitors[1]
+                    screenshot = sct.grab(monitor)
+                    img = Image.frombytes("RGB", screenshot.size, screenshot.bgra, "raw", "BGRX")
+                    
+                    buffer = io.BytesIO()
+                    img.save(buffer, format="JPEG", quality=70)
+                    b64_image = base64.b64encode(buffer.getvalue()).decode('utf-8')
+                    
+                    return JSONResponse({
+                        "ok": True,
+                        "image": f"data:image/jpeg;base64,{b64_image}",
+                        "width": img.width,
+                        "height": img.height
+                    })
+            except Exception as e:
+                return JSONResponse({"error": str(e)}, status_code=500)
+
         # ── Phone mic real-time audio → Gemini Live ──────────────────────────
 
         @app.websocket("/ws/phone-audio")

@@ -1164,6 +1164,19 @@ class JarvisLive:
 
     # ── dashboard command relay ─────────────────────────────────────────────
 
+    async def _broadcast_metrics_loop(self) -> None:
+        """Periodically broadcast system metrics to mobile dashboard."""
+        while True:
+            try:
+                if self._dashboard and self._dashboard._clients:
+                    from actions.system_monitor import get_system_status
+                    metrics = get_system_status()
+                    metrics["type"] = "metrics"
+                    await self._dashboard.broadcast(metrics)
+                await asyncio.sleep(10)  # Broadcast every 10 seconds
+            except Exception:
+                await asyncio.sleep(5)
+
     async def _process_dashboard_commands(self) -> None:
         while True:
             try:
@@ -1172,6 +1185,21 @@ class JarvisLive:
                 )
                 if not text:
                     continue
+                
+                # Handle special command types from mobile dashboard
+                if text.startswith("[SYSTEM_ACTION]"):
+                    action = text.replace("[SYSTEM_ACTION]", "").strip()
+                    await self._handle_system_action(action)
+                    continue
+                elif text.startswith("[PHONE_CAMERA]"):
+                    image_data = text.replace("[PHONE_CAMERA]", "").strip()
+                    await self._handle_phone_camera(image_data)
+                    continue
+                elif text.startswith("[SCREEN_ANALYSIS]"):
+                    image_data = text.replace("[SCREEN_ANALYSIS]", "").strip()
+                    await self._handle_screen_analysis(image_data)
+                    continue
+                
                 # Wait up to 8s for session to become ready after a wake
                 for _ in range(80):
                     if self.session:
@@ -1190,6 +1218,123 @@ class JarvisLive:
             except Exception as e:
                 print(f"[Dashboard] Command error: {e}")
                 await asyncio.sleep(0.5)
+
+    async def _handle_system_action(self, action: str) -> None:
+        """Handle system control actions from mobile dashboard."""
+        try:
+            from actions.computer_settings import computer_settings
+            from actions.computer_control import computer_control as cc
+            
+            # Parse action and value
+            parts = action.split(" ", 1)
+            action_name = parts[0]
+            value = parts[1] if len(parts) > 1 else None
+            
+            # Map dashboard actions to computer_settings actions
+            settings_map = {
+                "volume_up": "volume_up",
+                "volume_down": "volume_down",
+                "mute": "toggle_mute",
+                "toggle_mute": "toggle_mute",
+                "brightness_up": "brightness_up",
+                "brightness_down": "brightness_down",
+                "dark_mode": "dark_mode",
+                "toggle_wifi": "toggle_wifi",
+                "lock_screen": "lock_screen",
+                "screenshot": "screenshot",
+                "full_screen": "full_screen",
+                "minimize": "minimize",
+                "show_desktop": "show_desktop",
+                "task_manager": "task_manager",
+                "restart": "restart",
+                "shutdown": "shutdown",
+                "sleep_display": "sleep_display",
+                "next_tab": "next_tab",
+                "prev_tab": "prev_tab",
+                "close_tab": "close_tab",
+                "new_tab": "new_tab",
+                "refresh_page": "refresh_page",
+                "scroll_up": "scroll_up",
+                "scroll_down": "scroll_down",
+            }
+            
+            if action_name == "volume_set" and value:
+                # Set specific volume level
+                result = await computer_settings({"action": "volume_set", "value": value})
+                self.ui.write_log(f"[Mobile] Volume: {value}%")
+            elif action_name == "type_text" and value:
+                # Type text on PC
+                result = await cc({"action": "type", "text": value})
+                self.ui.write_log(f"[Mobile] Digitando: {value}")
+            elif action_name == "open_app" and value:
+                # Open application
+                from actions.open_app import open_app
+                result = await open_app({"app_name": value})
+                self.ui.write_log(f"[Mobile] Abrindo: {value}")
+            elif action_name in settings_map:
+                result = await computer_settings({"action": settings_map[action_name]})
+                self.ui.write_log(f"[Mobile] Ação: {action_name}")
+            else:
+                print(f"[Mobile] Unknown action: {action_name}")
+                
+            # Broadcast metrics update after system action
+            if self._dashboard:
+                try:
+                    from actions.system_monitor import get_system_status
+                    metrics = get_system_status()
+                    metrics["type"] = "metrics"
+                    await self._dashboard.broadcast(metrics)
+                except Exception:
+                    pass
+                    
+        except Exception as e:
+            print(f"[Mobile] System action error: {e}")
+
+    async def _handle_phone_camera(self, image_data: str) -> None:
+        """Handle camera image from phone for Gemini Vision analysis."""
+        try:
+            if not self.session:
+                print("[Mobile] No session for camera analysis")
+                return
+            
+            # Send image to Gemini for analysis
+            await self.session.send_client_content(
+                turns={"parts": [
+                    {"text": "Analise esta imagem capturada pela câmera do celular e descreva o que você vê:"},
+                    {"inline_data": {
+                        "mime_type": "image/jpeg",
+                        "data": image_data.split(",")[1] if "," in image_data else image_data
+                    }}
+                ]},
+                turn_complete=True,
+            )
+            self.ui.write_log("[Mobile] Imagem da câmera enviada para análise")
+            
+        except Exception as e:
+            print(f"[Mobile] Camera analysis error: {e}")
+
+    async def _handle_screen_analysis(self, image_data: str) -> None:
+        """Handle screen capture for analysis."""
+        try:
+            if not self.session:
+                print("[Mobile] No session for screen analysis")
+                return
+            
+            # Send screen capture to Gemini
+            await self.session.send_client_content(
+                turns={"parts": [
+                    {"text": "Analise esta captura de tela do computador e descreva o que está acontecendo:"},
+                    {"inline_data": {
+                        "mime_type": "image/jpeg",
+                        "data": image_data.split(",")[1] if "," in image_data else image_data
+                    }}
+                ]},
+                turn_complete=True,
+            )
+            self.ui.write_log("[Mobile] Tela capturada para análise")
+            
+        except Exception as e:
+            print(f"[Mobile] Screen analysis error: {e}")
 
     # ── worker command relay (remote mode) ─────────────────────────────────
 
@@ -1254,6 +1399,8 @@ class JarvisLive:
                 asyncio.create_task(self._dashboard.serve())
                 # Runs for the whole lifetime, not just inside an active session
                 asyncio.create_task(self._process_dashboard_commands())
+                # Periodic metrics broadcast to mobile dashboard
+                asyncio.create_task(self._broadcast_metrics_loop())
             except Exception as e:
                 print(f"[Dashboard] Disabled: {e}")
                 self._dashboard = None

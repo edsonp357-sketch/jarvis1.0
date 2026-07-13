@@ -43,10 +43,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 try:
     from jarvis_cloud import JarvisCloud
     _CLOUD_OK = True
-    print("[VPS] ☁️  JarvisCloud module loaded — cloud mode available")
+    print("[VPS] JarvisCloud module loaded - cloud mode available")
 except ImportError as e:
     _CLOUD_OK = False
-    print(f"[VPS] ⚠️  JarvisCloud not available: {e}")
+    print(f"[VPS] JarvisCloud not available: {e}")
     print("[VPS]     Install: pip install google-genai duckduckgo-search")
 
 # ── Config ──────────────────────────────────────────────────────────────────
@@ -107,7 +107,7 @@ class VPSDashboard:
             self._cloud._on_response = self._on_cloud_proactive
             self._cloud._on_log = self._on_cloud_log
             self._cloud.start()
-            print("[VPS] ☁️  Cloud mode ACTIVE — JARVIS runs 24/7")
+            print("[VPS] Cloud mode ACTIVE - JARVIS runs 24/7")
 
     @property
     def mode(self) -> str:
@@ -371,6 +371,153 @@ class VPSDashboard:
                 "worker_connected": self._worker is not None,
             })
 
+        # ── System Metrics (forward to worker in PC mode) ────────────────────
+
+        @app.get("/api/metrics")
+        async def get_metrics(req: Request):
+            if self._worker:
+                # PC Mode: forward to worker and wait for response
+                try:
+                    import asyncio as _aio
+                    future = _aio.get_event_loop().create_future()
+                    
+                    async def _wait_for_metrics():
+                        # Create a temporary websocket to get metrics
+                        # For now, return basic info
+                        return {"status": "waiting_for_worker"}
+                    
+                    # Send metrics request to worker
+                    await self.send_to_worker({"type": "get_metrics"})
+                    
+                    # Return placeholder - worker will broadcast actual metrics
+                    return JSONResponse({
+                        "cpu_percent": 0,
+                        "ram_percent": 0,
+                        "ram_used_gb": 0,
+                        "ram_total_gb": 0,
+                        "cpu_temp_c": None,
+                        "gpu_percent": None,
+                        "uptime": "Aguardando PC...",
+                        "process_count": 0,
+                        "pending": True
+                    })
+                except Exception as e:
+                    return JSONResponse({"error": str(e)}, status_code=500)
+            else:
+                # Cloud Mode: limited metrics (VPS only)
+                try:
+                    import psutil
+                    cpu = psutil.cpu_percent(interval=0.2)
+                    ram = psutil.virtual_memory()
+                    boot_time = psutil.boot_time()
+                    uptime_secs = time.time() - boot_time
+                    uptime_h = int(uptime_secs // 3600)
+                    uptime_m = int((uptime_secs % 3600) // 60)
+                    
+                    return JSONResponse({
+                        "cpu_percent": round(cpu, 1),
+                        "ram_percent": round(ram.percent, 1),
+                        "ram_used_gb": round(ram.used / 1024 ** 3, 1),
+                        "ram_total_gb": round(ram.total / 1024 ** 3, 1),
+                        "cpu_temp_c": None,
+                        "gpu_percent": None,
+                        "uptime": f"{uptime_h}h {uptime_m}m",
+                        "process_count": len(psutil.pids()),
+                        "mode": "cloud"
+                    })
+                except Exception as e:
+                    return JSONResponse({
+                        "cpu_percent": 0,
+                        "ram_percent": 0,
+                        "ram_used_gb": 0,
+                        "ram_total_gb": 0,
+                        "cpu_temp_c": None,
+                        "gpu_percent": None,
+                        "uptime": "N/A",
+                        "process_count": 0,
+                        "mode": "cloud"
+                    })
+
+        # ── Remote Control (forward to worker) ───────────────────────────────
+
+        @app.post("/api/control")
+        async def remote_control(req: Request):
+            body = await req.json()
+            action = body.get("action", "")
+            value = body.get("value", "")
+            
+            if self._worker:
+                # PC Mode: forward to worker
+                await self.send_to_worker({
+                    "type": "control",
+                    "action": action,
+                    "value": value
+                })
+                return JSONResponse({"ok": True, "action": action, "mode": "pc"})
+            else:
+                # Cloud Mode: limited control
+                limited_actions = {"volume_up", "volume_down", "mute"}
+                if action in limited_actions:
+                    return JSONResponse({"ok": True, "action": action, "mode": "cloud", "note": "Controle limitado no modo cloud"})
+                return JSONResponse({"error": "Controle remoto requer modo PC (conecte seu computador)"}, status_code=400)
+
+        # ── Phone Camera → Forward to Worker ─────────────────────────────────
+
+        @app.post("/api/camera")
+        async def phone_camera(req: Request, file: UploadFile = FastAPIFile(...)):
+            if not self._worker:
+                return JSONResponse({"error": "Câmera requer modo PC (conecte seu computador)"}, status_code=400)
+            
+            try:
+                import base64
+                content = await file.read()
+                b64_image = base64.b64encode(content).decode('utf-8')
+                mime_type = file.content_type or "image/jpeg"
+                
+                # Forward to worker for Gemini Vision analysis
+                await self.send_to_worker({
+                    "type": "phone_camera",
+                    "image": b64_image,
+                    "mime_type": mime_type
+                })
+                
+                return JSONResponse({"ok": True, "message": "Imagem enviada para análise"})
+            except Exception as e:
+                return JSONResponse({"error": str(e)}, status_code=500)
+
+        # ── Screen Capture → Forward to Worker ───────────────────────────────
+
+        @app.get("/api/screen")
+        async def get_screen(req: Request):
+            if not self._worker:
+                return JSONResponse({"error": "Captura de tela requer modo PC (conecte seu computador)"}, status_code=400)
+            
+            # Forward request to worker
+            await self.send_to_worker({"type": "get_screen"})
+            
+            # Worker will broadcast the screen capture
+            return JSONResponse({
+                "ok": True, 
+                "message": "Solicitação enviada ao PC",
+                "pending": True
+            })
+
+        # ── File listing ─────────────────────────────────────────────────────
+
+        @app.get("/api/files")
+        async def list_files(req: Request):
+            files = []
+            try:
+                for f in sorted(
+                    (p for p in UPLOADS_DIR.iterdir() if p.is_file()),
+                    key=lambda p: p.stat().st_mtime,
+                    reverse=True,
+                ):
+                    files.append({"name": f.name, "size": f.stat().st_size})
+            except Exception:
+                pass
+            return JSONResponse({"files": files})
+
         # ── File upload ───────────────────────────────────────────────────
         if _UPLOAD_OK:
             @app.post("/api/upload")
@@ -474,7 +621,7 @@ class VPSDashboard:
             if self._worker:
                 await self._worker.close()
             self._worker = websocket
-            print("[VPS] ✅ Worker (PC) conectado! → 🖥️ PC Mode")
+            print("[VPS] Worker (PC) conectado! -> PC Mode")
             await self.broadcast_to_browsers({"type": "status", "state": "active"})
             await self.broadcast_to_browsers({
                 "type": "mode",
@@ -502,13 +649,22 @@ class VPSDashboard:
                         # Audio data from JARVIS → relay to phone if connected
                         await self.broadcast_to_browsers(data)
 
+                    elif msg_type == "metrics":
+                        # Worker sending system metrics
+                        data["type"] = "metrics"
+                        await self.broadcast_to_browsers(data)
+
+                    elif msg_type == "screen_data":
+                        # Worker sending screen capture
+                        await self.broadcast_to_browsers(data)
+
             except WebSocketDisconnect:
                 pass
             except Exception as e:
                 print(f"[VPS] Worker error: {e}")
             finally:
                 self._worker = None
-                print("[VPS] ❌ Worker (PC) desconectado → ⛅ Cloud Mode")
+                print("[VPS] Worker (PC) desconectado -> Cloud Mode")
 
                 if _CLOUD_OK:
                     await self.broadcast_to_browsers({"type": "status", "state": "cloud_idle"})
@@ -572,13 +728,13 @@ async def main():
             vps.app, host="0.0.0.0", port=PORT, log_level="info"
         )
 
-        print(f"[VPS] ☁️  Cloud Deploy Mode (single port)")
+        print(f"[VPS] Cloud Deploy Mode (single port)")
         print(f"[VPS] Server: http://0.0.0.0:{PORT}")
         print(f"[VPS] Worker endpoint: ws://0.0.0.0:{PORT}/ws/worker")
         if _CLOUD_OK:
-            print(f"[VPS] ☁️  Cloud mode: ACTIVE (JARVIS responds even without PC)")
+            print(f"[VPS] Cloud mode: ACTIVE (JARVIS responds even without PC)")
         else:
-            print(f"[VPS] ⚠️  Cloud mode: INACTIVE (install google-genai for cloud mode)")
+            print(f"[VPS] Cloud mode: INACTIVE (install google-genai for cloud mode)")
 
         tasks = [uvicorn.Server(cfg).serve()]
         if vps._cloud:
@@ -597,10 +753,10 @@ async def main():
         print(f"[VPS] Dashboard: http://0.0.0.0:{PORT}")
         print(f"[VPS] Worker endpoint: ws://0.0.0.0:{WORKER_PORT}/ws/worker")
         if _CLOUD_OK:
-            print(f"[VPS] ☁️  Cloud mode: ACTIVE (JARVIS responds even without PC)")
+            print(f"[VPS] Cloud mode: ACTIVE (JARVIS responds even without PC)")
         else:
-            print(f"[VPS] ⚠️  Cloud mode: INACTIVE (install google-genai for cloud mode)")
-        print("[VPS] Aguardando conexão...")
+            print(f"[VPS] Cloud mode: INACTIVE (install google-genai for cloud mode)")
+        print("[VPS] Aguardando conexao...")
 
         tasks = [
             uvicorn.Server(cfg_dashboard).serve(),
